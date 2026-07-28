@@ -41,7 +41,7 @@ int _write(int fd, char *pbuffer, int size) {
 #endif
 /** @brief It also include some Hardware driver methods */
 //Pure initializaion Area
-volatile uint16_t adc1_ordinary_value = 0;
+volatile uint16_t adc1_ordinary_value[2] = {0};
 
 void system_clock_config(void)
 {
@@ -68,18 +68,18 @@ void system_clock_config(void)
 
     system_core_clock_update();
 }
-void dma_temp_config(void)
+void dma_temp_velo_config(void)
 {
   dma_init_type dma_init_struct;
   crm_periph_clock_enable(CRM_DMA1_PERIPH_CLOCK, TRUE);
 
   dma_reset(DMA1_CHANNEL1);
   dma_default_para_init(&dma_init_struct);
-  dma_init_struct.buffer_size = 1;
+  dma_init_struct.buffer_size = 2;
   dma_init_struct.direction = DMA_DIR_PERIPHERAL_TO_MEMORY;
-  dma_init_struct.memory_base_addr = (uint32_t)&adc1_ordinary_value;
+  dma_init_struct.memory_base_addr = (uint32_t)&adc1_ordinary_value[0];
   dma_init_struct.memory_data_width = DMA_MEMORY_DATA_WIDTH_HALFWORD;
-  dma_init_struct.memory_inc_enable = FALSE;
+  dma_init_struct.memory_inc_enable = TRUE;
   dma_init_struct.peripheral_base_addr = (uint32_t)&(ADC1->odt);
   dma_init_struct.peripheral_data_width = DMA_PERIPHERAL_DATA_WIDTH_HALFWORD;
   dma_init_struct.peripheral_inc_enable = FALSE;
@@ -132,15 +132,16 @@ void adc_config(void)
 
   adc_base_default_para_init(&adc_base_struct);
 
-  adc_base_struct.sequence_mode = FALSE;
+  adc_base_struct.sequence_mode = TRUE;
   adc_base_struct.repeat_mode = FALSE;
   adc_base_struct.data_align = ADC_RIGHT_ALIGNMENT;
-  adc_base_struct.ordinary_channel_length = 1;
+  adc_base_struct.ordinary_channel_length = 2;
   adc_base_config(ADC1, &adc_base_struct);
   adc_resolution_set(ADC1, ADC_RESOLUTION_12B);
 
   /* config ordinary channel */
   adc_ordinary_channel_set(ADC1, ADC_CHANNEL_16, 1, ADC_SAMPLETIME_640_5);
+  adc_ordinary_channel_set(ADC1, ADC_CHANNEL_17, 2, ADC_SAMPLETIME_640_5);
 
   /* config ordinary trigger source and trigger edge */
   adc_ordinary_conversion_trigger_set(ADC1, ADC_ORDINARY_TRIG_TMR1CH1, ADC_ORDINARY_TRIG_EDGE_NONE);
@@ -329,7 +330,7 @@ void init_can1_demo(void)
     gpio_init_struct.gpio_out_type = GPIO_OUTPUT_PUSH_PULL;
     gpio_init_struct.gpio_mode = GPIO_MODE_MUX;
     gpio_init_struct.gpio_pins = GPIO_PINS_11 | GPIO_PINS_12;
-    gpio_init_struct.gpio_pull = GPIO_PULL_NONE;
+    gpio_init_struct.gpio_pull = GPIO_PULL_NONE;//无内部电阻干扰
     gpio_init(GPIOA, &gpio_init_struct);
     gpio_pin_mux_config(GPIOA, GPIO_PINS_SOURCE11, GPIO_MUX_9);
     gpio_pin_mux_config(GPIOA, GPIO_PINS_SOURCE12, GPIO_MUX_9);
@@ -346,7 +347,7 @@ void init_can1_demo(void)
 
     /* 波特率 (APB1=72MHz): 72M / (9 × (3+12+3)) = 500Kbps */
     can_baudrate_struct.baudrate_div = 9;
-    can_baudrate_struct.rsaw_size = CAN_RSAW_2TQ;
+    can_baudrate_struct.rsaw_size = CAN_RSAW_2TQ;//偏差调整
     can_baudrate_struct.bts1_size = CAN_BTS1_12TQ;
     can_baudrate_struct.bts2_size = CAN_BTS2_3TQ;
     can_baudrate_set(CAN1, &can_baudrate_struct);
@@ -357,7 +358,7 @@ void init_can1_demo(void)
     can_filter_init_struct.filter_fifo = CAN_FILTER_FIFO0;
     can_filter_init_struct.filter_number = 0;
     can_filter_init_struct.filter_bit = CAN_FILTER_32BIT;
-    can_filter_init_struct.filter_id_high = 0;
+    can_filter_init_struct.filter_id_high = 0;//所有ID都接收
     can_filter_init_struct.filter_id_low = 0;
     can_filter_init_struct.filter_mask_high = 0;  // mask=0 → 全接收
     can_filter_init_struct.filter_mask_low = 0;
@@ -371,11 +372,12 @@ void init_can1_demo(void)
 //Utility Area
 void simple_read(){
     adc_ordinary_software_trigger_enable(ADC1, TRUE);
-    //修改二
     while(dma_flag_get(DMA1_FDT1_FLAG) == RESET);
     dma_flag_clear(DMA1_FDT1_FLAG);
     printf("internal_temperature = %.2f deg C\r\n",
-        (ADC_TEMP_BASE - (double)adc1_ordinary_value * ADC_VREF / 4095) / ADC_TEMP_SLOPE + 25);
+        (ADC_TEMP_BASE - (double)adc1_ordinary_value[0] * ADC_VREF / 4095) / ADC_TEMP_SLOPE + 25);
+    printf("internal_vref = %.3f V\r\n",
+        ((double)1.2 * 4095) / adc1_ordinary_value[1]);
 }
 /* 单次输出当前时间 */
 void ertc_print_time(void)
@@ -423,7 +425,7 @@ void can1_send(uint32_t id, uint8_t *data, uint8_t len)
 {
     can_tx_message_type tx_msg;
     tx_msg.standard_id = id;
-    tx_msg.extended_id = 0;
+    tx_msg.extended_id = 0;//更多空间的id
     tx_msg.id_type = CAN_ID_STANDARD;
     tx_msg.frame_type = CAN_TFT_DATA;
     tx_msg.dlc = len;
@@ -432,9 +434,12 @@ void can1_send(uint32_t id, uint8_t *data, uint8_t len)
     can_message_transmit(CAN1, &tx_msg);
 }
 //Interupt Area
+/*
 void SysTick_Handler(void) {//此函数中断时自动给录入触发
     systemticks++;
 }
+*/
+
 void USART1_IRQHandler(void) {//Idle Detect Interrupt
     if(usart_flag_get(USART1, USART_IDLEF_FLAG) != RESET)
     {

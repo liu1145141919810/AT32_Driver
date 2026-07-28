@@ -29,18 +29,18 @@ static void enterBright(const char* cmd_buf);
 //===========================================
 /** @brief  Structure Declaration */ 
 typedef enum{
-    DEFAULT,ORDER,LIGHT,TEMPERATURE,BRIGHT,ERROR_STATE
+    DEFAULT,ORDER,LIGHT,MONITOR,BRIGHT,ERROR_STATE
 }CommandType; 
 typedef enum {
     GETIN_ORDER, RETURN_DEFAULT, ACT_LIGHT,
-    ACT_TEMPERATURE, ACT_BRIGHT, OFF, ERROR_DEMO
+    ACT_MONITOR, ACT_BRIGHT, OFF, ERROR_DEMO
 } Event;
 typedef void (*state_enter_handler)(const char* cmd_buf);
 static state_enter_handler enter_handlers[]={
     [DEFAULT]=enterDefault,
     [ORDER]=enterOrder,
     [LIGHT]=enterLight,
-    [TEMPERATURE]=enterTemperature,
+    [MONITOR]=enterTemperature,
     [BRIGHT]=enterBright,
 };
 typedef struct{
@@ -52,9 +52,9 @@ static Transition transition_table[]={
     {DEFAULT, GETIN_ORDER, ORDER},
     {ORDER, RETURN_DEFAULT, DEFAULT},
     {ORDER, ACT_LIGHT, LIGHT},
-    {ORDER, ACT_TEMPERATURE, TEMPERATURE},
+    {ORDER, ACT_MONITOR, MONITOR},
     {LIGHT, OFF, ORDER},
-    {TEMPERATURE, OFF, ORDER},
+    {MONITOR, OFF, ORDER},
     {ORDER, ACT_BRIGHT, BRIGHT},
     {BRIGHT, OFF, ORDER},
     {BRIGHT, ACT_BRIGHT, BRIGHT},
@@ -65,7 +65,7 @@ static state_handler_t state_handlers[]={
     [DEFAULT]=deFaultFunc,
     [ORDER]=OrderFunc,
     [LIGHT]=lightFunc,
-    [TEMPERATURE]=temperatureFunc,
+    [MONITOR]=temperatureFunc,
     [BRIGHT]=brightFunc,
 };
 
@@ -74,7 +74,7 @@ static Event stringToEvent(const char* str){
     if(strcmp(str,"Order")==0)return GETIN_ORDER;
     if(strcmp(str,"Return")==0)return RETURN_DEFAULT;
     if(strcmp(str,"Light")==0)return ACT_LIGHT;
-    if(strcmp(str,"Temp")==0)return ACT_TEMPERATURE;
+    if(strcmp(str,"Monitor")==0)return ACT_MONITOR;
     //two type of Bright command: "Bright 50" or "Bright"
     if(strncmp(str, "Bright ", 7) == 0)return ACT_BRIGHT;
     if(strcmp(str,"Bright")==0)return ACT_BRIGHT;
@@ -150,7 +150,7 @@ static void enterLight(const char* cmd_buf){
     printf("Entering LIGHT state\r\n");
 }
 static void enterTemperature(const char* cmd_buf){
-    printf("Entering TEMPERATURE state\r\n");
+    printf("Entering MONITORING state\r\n");
 }
 //It's needs more discussion here
 static void pwm_set_duty(int percent,uint32_t pin){
@@ -211,7 +211,7 @@ void work_machine(void){
                    if(cmd_idx > 0){
                     cmd_idx--;
                     printf(" \b");
-                }
+                    }
                 } // 处理退格键
                 else if(cmd_idx<buf_size - 1){
                     cmd_buf[cmd_idx++] = usart_rx_buf[i];

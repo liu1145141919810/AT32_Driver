@@ -11,7 +11,6 @@ static volatile uint32_t fac_ms;
 /** @brief It also include some Hardware driver methods */
 extern uint32_t arr_value;//used for pwm
 extern volatile uint32_t systemticks;
-extern volatile uint16_t adc1_ordinary_value;
 
 extern volatile uint16_t uart_rx_len;
 extern volatile uint8_t uart_rx_done;
@@ -21,7 +20,7 @@ extern can_rx_message_type can_rx_msg;
 extern volatile uint8_t can_rx_done;
 //Pure initializaion Area
 void system_clock_config(void);
-void dma_temp_config(void);
+void dma_temp_velo_config(void);
 void pwm_init(void);
 void adc_config(void);
 void ertc_init(void);
