@@ -35,6 +35,7 @@ OBJS += $(BUILD_DIR)/at32f423_tmr.o
 OBJS += $(BUILD_DIR)/at32f423_can.o
 OBJS += $(BUILD_DIR)/FSM.o
 OBJS += $(BUILD_DIR)/init.o
+OBJS += $(BUILD_DIR)/RTOS_Demo.o
 
 # FreeRTOS add3
 FREERTOS_SRC = $(FW_LIB)/middlewares/freertos/source

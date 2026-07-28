@@ -3,3 +3,5 @@
 Already Finished:
 ## Version 0.1
 Deal with the FreeRTOs Promotion
+## Version 0.2
+Completely merge FSM with FreeRTOs

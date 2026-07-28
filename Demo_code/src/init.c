@@ -44,7 +44,7 @@ int _write(int fd, char *pbuffer, int size) {
 volatile uint16_t adc1_ordinary_value[2] = {0};
 
 void system_clock_config(void)
-{
+{   //设置系统时钟为144MHz
     flash_psr_set(FLASH_WAIT_CYCLE_4);
     crm_periph_clock_enable(CRM_PWC_PERIPH_CLOCK, TRUE);
     pwc_ldo_output_voltage_set(PWC_LDO_OUTPUT_1V3);
@@ -62,7 +62,7 @@ void system_clock_config(void)
     crm_apb1_div_set(CRM_APB1_DIV_2);
 
     crm_auto_step_mode_enable(TRUE);
-    crm_sysclk_switch(CRM_SCLK_PLL);
+    crm_sysclk_switch(CRM_SCLK_PLL);//系统时钟切换到PLL
     while(crm_sysclk_switch_status_get() != CRM_SCLK_PLL);
     crm_auto_step_mode_enable(FALSE);
 

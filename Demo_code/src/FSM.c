@@ -28,9 +28,6 @@ static void enterTemperature(const char* cmd_buf);
 static void enterBright(const char* cmd_buf);
 //===========================================
 /** @brief  Structure Declaration */ 
-typedef enum{
-    DEFAULT,ORDER,LIGHT,MONITOR,BRIGHT,ERROR_STATE
-}CommandType; 
 typedef enum {
     GETIN_ORDER, RETURN_DEFAULT, ACT_LIGHT,
     ACT_MONITOR, ACT_BRIGHT, OFF, ERROR_DEMO
@@ -107,7 +104,7 @@ static void fsm_execute(CommandType command){
 static void deFaultFunc(){
     static int hock = 0;
     static uint32_t last_toggle = 0;
-    uint32_t now = systemticks;
+    uint32_t now = systemticks;//判断瞬间完成，无任何阻塞，不用担心
     if (now - last_toggle >= 1000) {
         last_toggle = now;
         if(hock==0)
@@ -194,13 +191,7 @@ static void enterBright(const char* cmd_buf){
     }
     printf("Entering BRIGHT state\r\n");
 }
-void work_machine(void){
-    int cmd_idx=0;
-    const int buf_size = 32;
-    char cmd_buf[buf_size];
-    CommandType command = DEFAULT;
-    //===================================
-    while (1) {
+void work_machine(CommandType* command, char* cmd_buf, int buf_size, int* cmd_idx){
         if(uart_rx_done) {
             uart_rx_done = 0;
             // 拷贝接收到的数据到 cmd_buf（去掉末尾 \r\n）
@@ -213,38 +204,36 @@ void work_machine(void){
                     printf(" \b");
                     }
                 } // 处理退格键
-                else if(cmd_idx<buf_size - 1){
-                    cmd_buf[cmd_idx++] = usart_rx_buf[i];
+                else if(*cmd_idx<buf_size - 1){
+                    cmd_buf[*cmd_idx++] = usart_rx_buf[i];
                 }
                 else{
                     printf("Error: Command buffer overflow, CLean All\r\n");
-                    cmd_idx = 0; // 重置索引以避免溢出
+                    *cmd_idx = 0; // 重置索引以避免溢出
                 }
             }
             //这里做了手动化人工处理
-            if(len > 0&& (cmd_buf[cmd_idx - 1] == '\n'|| cmd_buf[cmd_idx - 1] == '\r')) {
-                cmd_buf[cmd_idx - 1] = '\0'; cmd_idx=0;// 去掉末尾的换行符
+            if(len > 0&& (cmd_buf[*cmd_idx - 1] == '\n'|| cmd_buf[*cmd_idx - 1] == '\r')) {
+                cmd_buf[*cmd_idx - 1] = '\0'; *cmd_idx=0;// 去掉末尾的换行符
                 Event event = stringToEvent(cmd_buf);
                 if(event == ERROR_DEMO) {
                     printf("Error: Unrecognized command '%s'\r\n", cmd_buf);
                 }
                 else {
-                    fsm_handle_event(&command, event);
-                    if(command == ERROR_STATE) {
+                    fsm_handle_event(command, event);
+                    if(*command == ERROR_STATE) {
                         printf("Error: Invalid transition for command '%s'\r\n", cmd_buf);
                         printf("Recovering to DEFAULT state.\r\n");
-                        command = DEFAULT;
+                        *command = DEFAULT;
                     }
                     else
-                        fsm_enter(command, cmd_buf);
+                        fsm_enter(*command, cmd_buf);
                 }
                 printf(">");
             }
             // 重置 DMA 接收位置
             reset_usart_dma();
         }
-
-        fsm_execute(command);
         //现阶段:先这里最简单地写一个应答机制，后续可以考虑更复杂的处理
         if(can_rx_done){
             can_rx_done = 0;
@@ -259,5 +248,6 @@ void work_machine(void){
             resp[2] = 0xCD;
             can1_send(0x300, resp, 3);
         }
-    }
+        fsm_execute(*command);
+        //现阶段:先这里最简单地写一个应答机制，后续可以考虑更复杂的处理
 }
