@@ -19,7 +19,7 @@
 #define configUSE_COUNTING_SEMAPHORES           0//一类资源有多个可用数量时，用一个计数值表示剩余资源数量。
 #define configUSE_TIMERS                        0//软件定时器
 #define configUSE_QUEUE_SETS                    0//把多个“可以阻塞等待的对象”组合成一个集合，让任务通过一个接口等待“其中任意一个对象发生事件”。
-#define configUSE_TASK_NOTIFICATIONS            0//任务唤醒通知相关
+#define configUSE_TASK_NOTIFICATIONS            1//任务唤醒通知相关
 
 /* Hook 函数 —— 最小版本全部关闭 */
 #define configUSE_IDLE_HOOK                     0//低功耗后台维护

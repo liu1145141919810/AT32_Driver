@@ -5,3 +5,5 @@ Already Finished:
 Deal with the FreeRTOs Promotion
 ## Version 0.2
 Completely merge FSM with FreeRTOs
+## Version 0.3
+Printf replace and Notification merge in

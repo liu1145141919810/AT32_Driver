@@ -1,8 +1,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "init.h"
+#include "utility.h"
 #include "RTOS_Demo.h"
-#include <stdio.h>
 void initwork(){
     wait_for_power_stable();
     system_clock_config();  // 配置时钟到 144MHz，匹配 configCPU_CLOCK_HZ
@@ -23,15 +23,17 @@ void initwork(){
 int main(void)
 {   
     initwork();
-    printf("\r\n\r\n\r\n");
-    printf("\r\n====== AT32F423 USART Test ======\r\n");
-    printf("Baudrate: 115200, 8N1\r\n");
-    printf("Send any character to echo back\r\n");
-    printf("LEDs will blink every 500ms\r\n");
+    //printf("\r\n\r\n\r\n");
+    demoPrint("\r\n====== AT32F423 USART Test ======\r\n");
+    demoPrint("Baudrate: 115200, 8N1\r\n");
+    demoPrint("Send any character to echo back\r\n");
+    demoPrint("LEDs will blink every 500ms\r\n");
     ertc_print_time();
     simple_read();
-    printf(">");
-    xTaskCreate(workTask, "work", 512, NULL, 1, NULL);
+    //printf(">");
+    xTaskCreate(FSMTask, "work", 512, NULL, 1, NULL);
+    xTaskCreate(UsartTask, "usart", 512, NULL, 2, &usartTaskHandle);
+    xTaskCreate(CanTask, "can", 512, NULL, 2, &canTaskHandle);
     vTaskStartScheduler();
     /* 不应该到这里 */
     while (1);

@@ -21,28 +21,16 @@
 
 uint8_t usart_rx_buf[USART_RX_BUF_LEN];
 volatile uint16_t uart_rx_len = 0;
-volatile uint8_t uart_rx_done = 0;
 
 can_rx_message_type can_rx_msg;
-volatile uint8_t can_rx_done = 0;
 #include <unistd.h>  // _write 需要这个
 
-#if defined (__GNUC__) && !defined (__clang__)
-int _write(int fd, char *pbuffer, int size) {
-    UNUSED(fd);
-    //这里URAT默认用了URAT1
-    for(int i = 0; i < size; i++) {
-        while(usart_flag_get(PRINT_UART, USART_TDBE_FLAG) == RESET);
-        usart_data_transmit(PRINT_UART, (uint16_t)(*pbuffer++));
-        while(usart_flag_get(PRINT_UART, USART_TDC_FLAG) == RESET);
-    }
-    return size;
-}
-#endif
 /** @brief It also include some Hardware driver methods */
 //Pure initializaion Area
 volatile uint16_t adc1_ordinary_value[2] = {0};
-
+volatile uint16_t* adc_read(int position){
+    return &adc1_ordinary_value[position];
+}
 void system_clock_config(void)
 {   //设置系统时钟为144MHz
     flash_psr_set(FLASH_WAIT_CYCLE_4);
@@ -207,7 +195,7 @@ void init_gpio_demo(){
     gpio_init(GPIOA, &gpio_init_struct);
 
 }
-void init_usart_rv_dma_demo(){
+void init_usart_rv_dma_demo(){//Using USART1
     gpio_init_type gpio_init_struct;
     crm_periph_clock_enable(CRM_GPIOA_PERIPH_CLOCK, TRUE);
     crm_periph_clock_enable(CRM_USART1_PERIPH_CLOCK, TRUE);
@@ -370,89 +358,8 @@ void init_can1_demo(void)
 }
 
 //Utility Area
-void simple_read(){
-    adc_ordinary_software_trigger_enable(ADC1, TRUE);
-    while(dma_flag_get(DMA1_FDT1_FLAG) == RESET);
-    dma_flag_clear(DMA1_FDT1_FLAG);
-    printf("internal_temperature = %.2f deg C\r\n",
-        (ADC_TEMP_BASE - (double)adc1_ordinary_value[0] * ADC_VREF / 4095) / ADC_TEMP_SLOPE + 25);
-    printf("internal_vref = %.3f V\r\n",
-        ((double)1.2 * 4095) / adc1_ordinary_value[1]);
-}
-/* 单次输出当前时间 */
-void ertc_print_time(void)
-{
-    ertc_time_type t;
-    ertc_calendar_get(&t);
-    printf("RTC: 20%02d-%02d-%02d %02d:%02d:%02d\r\n",
-           t.year, t.month, t.day, t.hour, t.min, t.sec);
-}
-void shift_pwn_mode(uint32_t pin){
-    //Only GPIOA pins 0, 1, 2 are supported for this demo
-    gpio_init_type gpio_init_struct;
-    gpio_default_para_init(&gpio_init_struct);
-    tmr_output_config_type tmr_output_struct;
-    gpio_init_struct.gpio_pins = pin;
-    
-    //pin:硬件引脚位
-    gpio_init_struct.gpio_mode = GPIO_MODE_MUX;
-    gpio_init_struct.gpio_out_type = GPIO_OUTPUT_PUSH_PULL;
-    gpio_init_struct.gpio_pull = GPIO_PULL_NONE;
-    gpio_init_struct.gpio_drive_strength = GPIO_DRIVE_STRENGTH_STRONGER;
-    gpio_init(GPIOA, &gpio_init_struct);
-    
-    //复用引脚位置
-    gpio_pin_mux_config(GPIOA, GPIO_PINS_SOURCE0, GPIO_MUX_1);  // TMR2_CH1
-    gpio_pin_mux_config(GPIOA, GPIO_PINS_SOURCE1, GPIO_MUX_1);  // TMR2_CH2
-    gpio_pin_mux_config(GPIOA, GPIO_PINS_SOURCE2, GPIO_MUX_1);  // TMR2_CH3
-    
-    // 配置 PWM 通道
-    tmr_output_default_para_init(&tmr_output_struct);
-    tmr_output_struct.oc_mode = TMR_OUTPUT_CONTROL_PWM_MODE_A;// 设置为 PWM 模式 A,高低判断
-    tmr_output_struct.oc_output_state = TRUE;//内部状态直接输出到波形
-    tmr_output_struct.oc_polarity = TMR_OUTPUT_ACTIVE_HIGH;//有效电平极性
-    
-    tmr_output_channel_config(TMR2, TMR_SELECT_CHANNEL_1, &tmr_output_struct);
-    tmr_output_channel_config(TMR2, TMR_SELECT_CHANNEL_2, &tmr_output_struct);
-    tmr_output_channel_config(TMR2, TMR_SELECT_CHANNEL_3, &tmr_output_struct);
-}
 void reset_usart_dma(void){
     dma_channel_enable(DMA1_CHANNEL2, FALSE);
     dma_data_number_set(DMA1_CHANNEL2, USART_RX_BUF_LEN);
     dma_channel_enable(DMA1_CHANNEL2, TRUE);
-}
-void can1_send(uint32_t id, uint8_t *data, uint8_t len)
-{
-    can_tx_message_type tx_msg;
-    tx_msg.standard_id = id;
-    tx_msg.extended_id = 0;//更多空间的id
-    tx_msg.id_type = CAN_ID_STANDARD;
-    tx_msg.frame_type = CAN_TFT_DATA;
-    tx_msg.dlc = len;
-    for (int i = 0; i < len && i < 8; i++)
-        tx_msg.data[i] = data[i];
-    can_message_transmit(CAN1, &tx_msg);
-}
-//Interupt Area
-/*
-void SysTick_Handler(void) {//此函数中断时自动给录入触发
-    systemticks++;
-}
-*/
-
-void USART1_IRQHandler(void) {//Idle Detect Interrupt
-    if(usart_flag_get(USART1, USART_IDLEF_FLAG) != RESET)
-    {
-        usart_data_receive(USART1);  // 读 DR 清除 IDLE 标志，除此外无用
-        uart_rx_len = USART_RX_BUF_LEN - dma_data_number_get(DMA1_CHANNEL2);
-        uart_rx_done = 1;
-    }
-}//CAN会自己管理边界，不需要重置
-void CAN1_RX0_IRQHandler(void)
-{//触发通信逻辑，这里是简单地提示存取，可以复杂化
-    if (can_interrupt_flag_get(CAN1, CAN_RF0MN_FLAG) != RESET)
-    {
-        can_message_receive(CAN1, CAN_RX_FIFO0, &can_rx_msg);
-        can_rx_done = 1;
-    }
 }

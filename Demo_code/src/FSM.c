@@ -1,15 +1,19 @@
+#include <stddef.h>     // NULL
+#include <string.h>     // strcmp, strncmp
+#include <stdlib.h>     // atoi
+#include <stdio.h>      // sscanf
+
+#include "FreeRTOS.h"
+#include "task.h" //这两个貌似要一起引用
 #include "FSM.h"
+#include "utility.h"
 #include "init.h"
 #include "at32f423_usart.h"
 #include "at32f423_gpio.h"  //gpio
 
-#include <stddef.h>     // NULL
-#include <string.h>     // strcmp, strncmp
-#include <stdio.h>      // printf
-#include <stdlib.h>     // atoi
+
 //====================
 /** @brief External Dependency*/
-extern volatile uint32_t systemticks;
 extern void simple_read(void);
 extern uint32_t arr_value;
 
@@ -18,7 +22,7 @@ extern uint32_t arr_value;
 static void deFaultFunc(void);
 static void OrderFunc(void);
 static void lightFunc(void);
-static void temperatureFunc(void);
+static void monitorFunc(void);
 static void brightFunc(void);
 /** @brief  Declaration Area for Entering Function */
 static void enterDefault(const char* cmd_buf);
@@ -62,7 +66,7 @@ static state_handler_t state_handlers[]={
     [DEFAULT]=deFaultFunc,
     [ORDER]=OrderFunc,
     [LIGHT]=lightFunc,
-    [MONITOR]=temperatureFunc,
+    [MONITOR]=monitorFunc,
     [BRIGHT]=brightFunc,
 };
 
@@ -104,7 +108,7 @@ static void fsm_execute(CommandType command){
 static void deFaultFunc(){
     static int hock = 0;
     static uint32_t last_toggle = 0;
-    uint32_t now = systemticks;//判断瞬间完成，无任何阻塞，不用担心
+    uint32_t now = xTaskGetTickCount();//判断瞬间完成，无任何阻塞，不用担心
     if (now - last_toggle >= 1000) {
         last_toggle = now;
         if(hock==0)
@@ -122,9 +126,9 @@ static void OrderFunc(void){
 static void lightFunc(void){
     gpio_bits_reset(GPIOA, GPIO_PINS_0 | GPIO_PINS_1 | GPIO_PINS_2);
 }
-static void temperatureFunc(void){
+static void monitorFunc(void){
     static uint32_t last_toggle = 0;
-    uint32_t now = systemticks;
+    uint32_t now = xTaskGetTickCount();
     if(now - last_toggle >= 4000) {
         last_toggle = now;
         simple_read();
@@ -136,18 +140,18 @@ static void brightFunc(void){
 //=========
 /** @brief Parameter Analysis */
 static void enterDefault(const char* cmd_buf){
-    printf("Entering DEFAULT state\r\n");
+    demoPrint("Entering DEFAULT state\r\n");
 }
 static void enterOrder(const char* cmd_buf){
-    printf("Entering ORDER state\r\n");
+    demoPrint("Entering ORDER state\r\n");
     wait_for_power_stable();
     init_gpio_demo();
 }
 static void enterLight(const char* cmd_buf){
-    printf("Entering LIGHT state\r\n");
+    demoPrint("Entering LIGHT state\r\n");
 }
 static void enterTemperature(const char* cmd_buf){
-    printf("Entering MONITORING state\r\n");
+    demoPrint("Entering MONITORING state\r\n");
 }
 //It's needs more discussion here
 static void pwm_set_duty(int percent,uint32_t pin){
@@ -186,68 +190,71 @@ static void enterBright(const char* cmd_buf){
         pwm_set_duty(b_value3, GPIO_PINS_2);
     }
     else{
-        printf("Error: Invalid Bright command format\r\n");
-        printf("Getting into default Bright case\r\n");
+        demoPrint("Error: Invalid Bright command format\r\n");
+        demoPrint("Getting into default Bright case\r\n");
     }
-    printf("Entering BRIGHT state\r\n");
+    demoPrint("Entering BRIGHT state\r\n");
 }
-void work_machine(CommandType* command, char* cmd_buf, int buf_size, int* cmd_idx){
-        if(uart_rx_done) {
-            uart_rx_done = 0;
-            // 拷贝接收到的数据到 cmd_buf（去掉末尾 \r\n）
-            int len = uart_rx_len;
-            if(len > buf_size - 1) len = buf_size - 1;
-            for(int i = 0; i < len; i++){
-                if(usart_rx_buf[i] == '\b'||usart_rx_buf[i]==0x7F){
-                   if(cmd_idx > 0){
-                    cmd_idx--;
-                    printf(" \b");
-                    }
-                } // 处理退格键
-                else if(*cmd_idx<buf_size - 1){
-                    cmd_buf[*cmd_idx++] = usart_rx_buf[i];
-                }
-                else{
-                    printf("Error: Command buffer overflow, CLean All\r\n");
-                    *cmd_idx = 0; // 重置索引以避免溢出
-                }
+// Outter Interface Area
+void usart0comm(CommandType* command, char* cmd_buf, int buf_size, int* cmd_idx){
+    // 拷贝接收到的数据到 cmd_buf（去掉末尾 \r\n）
+    int len = uart_rx_len;
+    if(len > buf_size - 1) len = buf_size - 1;
+
+    for(int i = 0; i < len; i++){
+        if(usart_rx_buf[i] == '\b'||usart_rx_buf[i]==0x7F){
+            if(*cmd_idx > 0){
+            (*cmd_idx)--;
             }
-            //这里做了手动化人工处理
-            if(len > 0&& (cmd_buf[*cmd_idx - 1] == '\n'|| cmd_buf[*cmd_idx - 1] == '\r')) {
-                cmd_buf[*cmd_idx - 1] = '\0'; *cmd_idx=0;// 去掉末尾的换行符
-                Event event = stringToEvent(cmd_buf);
-                if(event == ERROR_DEMO) {
-                    printf("Error: Unrecognized command '%s'\r\n", cmd_buf);
-                }
-                else {
-                    fsm_handle_event(command, event);
-                    if(*command == ERROR_STATE) {
-                        printf("Error: Invalid transition for command '%s'\r\n", cmd_buf);
-                        printf("Recovering to DEFAULT state.\r\n");
-                        *command = DEFAULT;
-                    }
-                    else
-                        fsm_enter(*command, cmd_buf);
-                }
-                printf(">");
-            }
-            // 重置 DMA 接收位置
-            reset_usart_dma();
+        } // 处理退格键
+        else if(*cmd_idx<buf_size - 1){
+            cmd_buf[(*cmd_idx)++] = usart_rx_buf[i];
         }
-        //现阶段:先这里最简单地写一个应答机制，后续可以考虑更复杂的处理
-        if(can_rx_done){
-            can_rx_done = 0;
-            printf("\r\n[CAN RX] ID=0x%03lX DLC=%d",
+        else{
+            demoPrint("Error: Command buffer overflow, CLean All\r\n");
+            *cmd_idx = 0; // 重置索引以避免溢出
+        }
+    }
+
+    for(int i = 0; i < len; i++){
+        if(usart_rx_buf[i] == '\b'||usart_rx_buf[i]==0x7F){
+            demoPrint(" \b");
+        }
+    }
+    reset_usart_dma();
+}
+
+void canComm(){
+            demoPrint("\r\n[CAN RX] ID=0x%03lX DLC=%d",
                    can_rx_msg.standard_id, can_rx_msg.dlc);
             for(int i = 0; i < can_rx_msg.dlc; i++)
-                printf(" %02X", can_rx_msg.data[i]);
-            printf("\r\n>");
+                demoPrint(" %02X", can_rx_msg.data[i]);
+            demoPrint("\r\n>");
             uint8_t resp[8];
             resp[0] = can_rx_msg.data[0];
             resp[1] = 0xAB;
             resp[2] = 0xCD;
             can1_send(0x300, resp, 3);
-        }
-        fsm_execute(*command);
-        //现阶段:先这里最简单地写一个应答机制，后续可以考虑更复杂的处理
+}
+
+void fsm_dealing(CommandType* command, char* cmd_buf, int buf_size, int* cmd_idx){
+    if((*cmd_idx) > 0&& (cmd_buf[*cmd_idx - 1] == '\n'|| cmd_buf[*cmd_idx - 1] == '\r')) {
+                cmd_buf[*cmd_idx - 1] = '\0'; *cmd_idx=0;// 去掉末尾的换行符
+                Event event = stringToEvent(cmd_buf);
+                if(event == ERROR_DEMO) {
+                    demoPrint("Error: Unrecognized command %s\r\n", cmd_buf);
+                }
+                else {
+                    fsm_handle_event(command, event);
+                    if(*command == ERROR_STATE) {
+                        demoPrint("Error: Invalid transition for command %s\r\n", cmd_buf);
+                        demoPrint("Recovering to DEFAULT state.\r\n");
+                        *command = DEFAULT;
+                    }
+                    else
+                        fsm_enter(*command, cmd_buf);
+                }
+                demoPrint(">");
+            }
+    fsm_execute(*command);
 }

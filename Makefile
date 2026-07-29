@@ -36,6 +36,7 @@ OBJS += $(BUILD_DIR)/at32f423_can.o
 OBJS += $(BUILD_DIR)/FSM.o
 OBJS += $(BUILD_DIR)/init.o
 OBJS += $(BUILD_DIR)/RTOS_Demo.o
+OBJS += $(BUILD_DIR)/utility.o
 
 # FreeRTOS add3
 FREERTOS_SRC = $(FW_LIB)/middlewares/freertos/source
@@ -56,6 +57,7 @@ CFLAGS += -mfloat-abi=softfp -mfpu=fpv4-sp-d16 # add1
 CFLAGS += $(INCLUDES)
 
 LDFLAGS = -specs=nosys.specs
+LDFLAGS += -specs=nano.specs -lc -lnosys
 LDFLAGS += -T$(FW_LIB)/libraries/cmsis/cm4/device_support/startup/gcc/linker/AT32F423xC_FLASH.ld
 
 all: $(TARGET)
