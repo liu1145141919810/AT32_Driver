@@ -13,10 +13,10 @@
 
 
 //====================
+
 /** @brief External Dependency*/
 extern void simple_read(void);
-extern uint32_t arr_value;
-
+can_rx_message_type can_rx_msg;
 // ======================================================
 /** @brief  Declaration Area for Continuous Function */
 static void deFaultFunc(void);
@@ -96,9 +96,9 @@ static void fsm_enter(CommandType command,const char* cmd_buf){
         enter_handlers[command](cmd_buf);
     }
 }
-static void fsm_execute(CommandType command){
-    if(command<ERROR_STATE && state_handlers[command] != NULL){
-        state_handlers[command]();
+void fsm_conduct(CommandType *command){
+    if(*command<ERROR_STATE && state_handlers[*command] != NULL){
+        state_handlers[*command]();
     }
 }
 //=========================================
@@ -157,7 +157,7 @@ static void enterTemperature(const char* cmd_buf){
 static void pwm_set_duty(int percent,uint32_t pin){
     if(percent<0)percent=0;
     if(percent>100)percent=100;
-    uint32_t ccr_value = (arr_value * percent) / 100;
+    uint32_t ccr_value = (arr_value_read() * percent) / 100;
     if(pin==GPIO_PINS_0){
         tmr_channel_value_set(TMR2, TMR_SELECT_CHANNEL_1, ccr_value);
     }
@@ -196,65 +196,49 @@ static void enterBright(const char* cmd_buf){
     demoPrint("Entering BRIGHT state\r\n");
 }
 // Outter Interface Area
-void usart0comm(CommandType* command, char* cmd_buf, int buf_size, int* cmd_idx){
-    // 拷贝接收到的数据到 cmd_buf（去掉末尾 \r\n）
-    int len = uart_rx_len;
-    if(len > buf_size - 1) len = buf_size - 1;
-
-    for(int i = 0; i < len; i++){
-        if(usart_rx_buf[i] == '\b'||usart_rx_buf[i]==0x7F){
-            if(*cmd_idx > 0){
-            (*cmd_idx)--;
-            }
-        } // 处理退格键
-        else if(*cmd_idx<buf_size - 1){
-            cmd_buf[(*cmd_idx)++] = usart_rx_buf[i];
-        }
-        else{
-            demoPrint("Error: Command buffer overflow, CLean All\r\n");
-            *cmd_idx = 0; // 重置索引以避免溢出
-        }
+void usart0comm(char* cmd_buf, int buf_size, int* cmd_idx){//回显操作废止
+    int copy_len = uart_rx_len_read();
+    if(copy_len>buf_size-1)copy_len=buf_size-1;
+    for(int i = 0; i < copy_len; i++){
+        cmd_buf[i] = usart_rx_buf_read(i);
     }
-
-    for(int i = 0; i < len; i++){
-        if(usart_rx_buf[i] == '\b'||usart_rx_buf[i]==0x7F){
-            demoPrint(" \b");
-        }
-    }
+    cmd_buf[copy_len] = '\0'; // 添加字符串结束符
+    *cmd_idx = copy_len;
     reset_usart_dma();
 }
 
 void canComm(){
-            demoPrint("\r\n[CAN RX] ID=0x%03lX DLC=%d",
-                   can_rx_msg.standard_id, can_rx_msg.dlc);
-            for(int i = 0; i < can_rx_msg.dlc; i++)
-                demoPrint(" %02X", can_rx_msg.data[i]);
-            demoPrint("\r\n>");
-            uint8_t resp[8];
-            resp[0] = can_rx_msg.data[0];
-            resp[1] = 0xAB;
-            resp[2] = 0xCD;
-            can1_send(0x300, resp, 3);
+
+    demoPrint("\r\n[CAN RX] ID=0x%03lX DLC=%d",
+            can_rx_msg.standard_id, can_rx_msg.dlc);
+    for(int i = 0; i < can_rx_msg.dlc; i++)
+        demoPrint(" %02X", can_rx_msg.data[i]);
+    demoPrint("\r\n>");
+    uint8_t resp[8];
+    resp[0] = can_rx_msg.data[0];
+    resp[1] = 0xAB;
+    resp[2] = 0xCD;
+    can1_send(0x300, resp, 3);
 }
 
-void fsm_dealing(CommandType* command, char* cmd_buf, int buf_size, int* cmd_idx){
-    if((*cmd_idx) > 0&& (cmd_buf[*cmd_idx - 1] == '\n'|| cmd_buf[*cmd_idx - 1] == '\r')) {
-                cmd_buf[*cmd_idx - 1] = '\0'; *cmd_idx=0;// 去掉末尾的换行符
-                Event event = stringToEvent(cmd_buf);
-                if(event == ERROR_DEMO) {
-                    demoPrint("Error: Unrecognized command %s\r\n", cmd_buf);
-                }
-                else {
-                    fsm_handle_event(command, event);
-                    if(*command == ERROR_STATE) {
-                        demoPrint("Error: Invalid transition for command %s\r\n", cmd_buf);
-                        demoPrint("Recovering to DEFAULT state.\r\n");
-                        *command = DEFAULT;
-                    }
-                    else
-                        fsm_enter(*command, cmd_buf);
-                }
-                demoPrint(">");
-            }
-    fsm_execute(*command);
+void fsm_analysis(CommandType* command, char* cmd_buf, int buf_size, int* cmd_idx){
+    cmd_buf[*cmd_idx - 1] = '\0'; *cmd_idx=0;// 去掉末尾的换行符
+    Event event = stringToEvent(cmd_buf);
+    if(event == ERROR_DEMO) {
+        demoPrint("Error: Unrecognized command %s\r\n", cmd_buf);
+    }
+    else {
+        fsm_handle_event(command, event);
+        if(*command == ERROR_STATE) {
+            demoPrint("Error: Invalid transition for command %s\r\n", cmd_buf);
+            demoPrint("Recovering to DEFAULT state.\r\n");
+            *command = DEFAULT;
+        }
+        else
+            fsm_enter(*command, cmd_buf);
+    }demoPrint(">");
+}
+//=========== Data Interface Area ==========
+can_rx_message_type* can_rx_msg_get(void){
+    return &can_rx_msg;
 }

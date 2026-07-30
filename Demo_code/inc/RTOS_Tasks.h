@@ -2,9 +2,17 @@
 #define RTOS_DEMO_H
 #include "FreeRTOS.h"
 #include "task.h"
+#include "queue.h"
+#define BUF_SIZE 32
+//========== Demo Structure =========
+typedef struct{
+    char cmd_buf[BUF_SIZE];
+    int len;
+} CmdMessage;
 //========Variable Area========
 extern TaskHandle_t usartTaskHandle;//本身是指针，地址不会变化不用volatile
 extern TaskHandle_t canTaskHandle;
+extern QueueHandle_t cmdQueue;
 //========Task Area========
 void FSMTask(void *arg);
 void UsartTask(void *arg);

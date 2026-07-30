@@ -11,9 +11,9 @@ void simple_read(){
     while(dma_flag_get(DMA1_FDT1_FLAG) == RESET);
     dma_flag_clear(DMA1_FDT1_FLAG);
     demoPrint("internal_temperature = %.2f deg C\r\n",
-        (ADC_TEMP_BASE - (double)*adc_read(0) * ADC_VREF / 4095) / ADC_TEMP_SLOPE + 25);
+        (ADC_TEMP_BASE - (double)adc_read(0) * ADC_VREF / 4095) / ADC_TEMP_SLOPE + 25);
     demoPrint("internal_vref = %.3f V\r\n",
-        ((double)1.2 * 4095) / *adc_read(1));
+        ((double)1.2 * 4095) / (double)adc_read(1));
     }
 /* 单次输出当前时间 */
 void ertc_print_time(void)

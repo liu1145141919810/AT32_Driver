@@ -22,15 +22,12 @@
 uint8_t usart_rx_buf[USART_RX_BUF_LEN];
 volatile uint16_t uart_rx_len = 0;
 
-can_rx_message_type can_rx_msg;
 #include <unistd.h>  // _write 需要这个
 
 /** @brief It also include some Hardware driver methods */
 //Pure initializaion Area
 volatile uint16_t adc1_ordinary_value[2] = {0};
-volatile uint16_t* adc_read(int position){
-    return &adc1_ordinary_value[position];
-}
+
 void system_clock_config(void)
 {   //设置系统时钟为144MHz
     flash_psr_set(FLASH_WAIT_CYCLE_4);
@@ -285,8 +282,6 @@ void at32_board_init()
 {
   /* initialize delay function */
   systick_clock_source_config(SYSTICK_CLOCK_SOURCE_AHBCLK_NODIV);
-  fac_us = system_core_clock / (1000000U);
-  fac_ms = fac_us * (1000U);
   /* configure button in at_start board */
   gpio_init_type gpio_init_struct;
 
@@ -362,4 +357,24 @@ void reset_usart_dma(void){
     dma_channel_enable(DMA1_CHANNEL2, FALSE);
     dma_data_number_set(DMA1_CHANNEL2, USART_RX_BUF_LEN);
     dma_channel_enable(DMA1_CHANNEL2, TRUE);
+}
+
+//=============== Data Interface Area ======================
+volatile uint16_t adc_read(int position){
+    return adc1_ordinary_value[position];
+}
+volatile uint16_t uart_rx_len_read(void){
+    return uart_rx_len;
+}
+void uart_rx_len_write(uint16_t len){
+    uart_rx_len = len;
+}
+uint8_t usart_rx_buf_read(int index){
+    return usart_rx_buf[index];
+}
+void usart_rx_buf_write(int index, uint8_t value){
+    usart_rx_buf[index] = value;
+}
+uint32_t arr_value_read(void){
+    return arr_value;
 }

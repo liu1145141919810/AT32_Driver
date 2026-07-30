@@ -35,7 +35,7 @@ OBJS += $(BUILD_DIR)/at32f423_tmr.o
 OBJS += $(BUILD_DIR)/at32f423_can.o
 OBJS += $(BUILD_DIR)/FSM.o
 OBJS += $(BUILD_DIR)/init.o
-OBJS += $(BUILD_DIR)/RTOS_Demo.o
+OBJS += $(BUILD_DIR)/RTOS_Tasks.o
 OBJS += $(BUILD_DIR)/utility.o
 
 # FreeRTOS add3
