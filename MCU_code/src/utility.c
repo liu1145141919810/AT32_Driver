@@ -15,7 +15,7 @@ void simple_read(){
     demoPrint("internal_vref = %.3f V\r\n",
         ((double)1.2 * 4095) / (double)adc_read(1));
     }
-/* 单次输出当前时间 */
+/* Single output of current time */
 void ertc_print_time(void)
 {   //Here we don't spare 0 for the relevant data
     ertc_time_type t;
@@ -32,23 +32,23 @@ void shift_pwn_mode(uint32_t pin){
     tmr_output_config_type tmr_output_struct;
     gpio_init_struct.gpio_pins = pin;
     
-    //pin:硬件引脚位
+    //Hardware pin bit
     gpio_init_struct.gpio_mode = GPIO_MODE_MUX;
     gpio_init_struct.gpio_out_type = GPIO_OUTPUT_PUSH_PULL;
     gpio_init_struct.gpio_pull = GPIO_PULL_NONE;
     gpio_init_struct.gpio_drive_strength = GPIO_DRIVE_STRENGTH_STRONGER;
     gpio_init(GPIOA, &gpio_init_struct);
     
-    //复用引脚位置
+    // Configure the pin's alternate function to TMR2
     gpio_pin_mux_config(GPIOA, GPIO_PINS_SOURCE0, GPIO_MUX_1);  // TMR2_CH1
     gpio_pin_mux_config(GPIOA, GPIO_PINS_SOURCE1, GPIO_MUX_1);  // TMR2_CH2
     gpio_pin_mux_config(GPIOA, GPIO_PINS_SOURCE2, GPIO_MUX_1);  // TMR2_CH3
     
-    // 配置 PWM 通道
+    // Configure TMR2 for PWM output
     tmr_output_default_para_init(&tmr_output_struct);
-    tmr_output_struct.oc_mode = TMR_OUTPUT_CONTROL_PWM_MODE_A;// 设置为 PWM 模式 A,高低判断
-    tmr_output_struct.oc_output_state = TRUE;//内部状态直接输出到波形
-    tmr_output_struct.oc_polarity = TMR_OUTPUT_ACTIVE_HIGH;//有效电平极性
+    tmr_output_struct.oc_mode = TMR_OUTPUT_CONTROL_PWM_MODE_A;// Setting the output channel to PWM mode A
+    tmr_output_struct.oc_output_state = TRUE;//Internal output directly controls the output of the corresponding channel.
+    tmr_output_struct.oc_polarity = TMR_OUTPUT_ACTIVE_HIGH;//Voltage high level is active
     
     tmr_output_channel_config(TMR2, TMR_SELECT_CHANNEL_1, &tmr_output_struct);
     tmr_output_channel_config(TMR2, TMR_SELECT_CHANNEL_2, &tmr_output_struct);
@@ -58,7 +58,7 @@ void can1_send(uint32_t id, uint8_t *data, uint8_t len)
 {
     can_tx_message_type tx_msg;
     tx_msg.standard_id = id;
-    tx_msg.extended_id = 0;//更多空间的id
+    tx_msg.extended_id = 0;//Id for the extended frame, not used in this demo
     tx_msg.id_type = CAN_ID_STANDARD;
     tx_msg.frame_type = CAN_TFT_DATA;
     tx_msg.dlc = len;
@@ -158,7 +158,7 @@ void demoPrint(const char* str,...){
             else if(*str == '.'){
                 str+=1;
                 double val = va_arg(args, double);
-                int store=*str - '0';//获取小数位数 不能超过9位
+                int store=*str - '0';//Get the number of decimal places to display, no more than 9
                 str+=1;
                 printNumF(val,store);
             }

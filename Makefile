@@ -11,7 +11,7 @@ INCLUDES += -I$(FW_LIB)/libraries/cmsis/cm4/device_support
 INCLUDES += -I$(FW_LIB)/libraries/drivers/inc
 INCLUDES += -I.
 #INCLUDES += -I$(FW_LIB)/project/at32f423_board
-INCLUDES += -I./Demo_code/inc
+INCLUDES += -I./MCU_code/inc
 INCLUDES += -I$(FW_LIB)/middlewares/freertos/source/include                         #add2
 INCLUDES += -I$(FW_LIB)/middlewares/freertos/source/portable/GCC/ARM_CM4F             #add3
 
@@ -41,12 +41,12 @@ OBJS += $(BUILD_DIR)/utility.o
 # FreeRTOS add3
 FREERTOS_SRC = $(FW_LIB)/middlewares/freertos/source
 FREERTOS_OBJS = $(BUILD_DIR)/tasks.o \
-                $(BUILD_DIR)/queue.o \
-                $(BUILD_DIR)/list.o \
-                $(BUILD_DIR)/timers.o \
-                $(BUILD_DIR)/event_groups.o \
-                $(BUILD_DIR)/port.o \
-                $(BUILD_DIR)/heap_4.o
+				$(BUILD_DIR)/queue.o \
+				$(BUILD_DIR)/list.o \
+				$(BUILD_DIR)/timers.o \
+				$(BUILD_DIR)/event_groups.o \
+				$(BUILD_DIR)/port.o \
+				$(BUILD_DIR)/heap_4.o
 OBJS += $(FREERTOS_OBJS)
 
 CFLAGS  = -mcpu=cortex-m4 -mthumb
@@ -62,7 +62,7 @@ LDFLAGS += -T$(FW_LIB)/libraries/cmsis/cm4/device_support/startup/gcc/linker/AT3
 
 all: $(TARGET)
 
-$(BUILD_DIR)/%.o: Demo_code/src/%.c
+$(BUILD_DIR)/%.o: MCU_code/src/%.c
 	mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -100,6 +100,7 @@ $(BUILD_DIR)/heap_4.o: $(FREERTOS_SRC)/portable/memmang/heap_4.c
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
+	arm-none-eabi-size $@
 
 clean:
 	rm -rf $(BUILD_DIR)

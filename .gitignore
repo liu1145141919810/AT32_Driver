@@ -5,3 +5,5 @@ build/
 *.txt
 Reference/
 Makefile copy
+test.c
+*.sh

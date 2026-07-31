@@ -1,37 +1,37 @@
-#include <stddef.h>     // NULL
-#include <string.h>     // strcmp, strncmp
-#include <stdlib.h>     // atoi
-#include <stdio.h>      // sscanf
+#include <stddef.h>     // NULL definition
+#include <string.h>     // strcmp, strncmp functions
+#include <stdlib.h>     // atoi function
+#include <stdio.h>      // sscanf function
 
 #include "FreeRTOS.h"
-#include "task.h" //这两个貌似要一起引用
+#include "task.h" // These two header files need to be included together
 #include "FSM.h"
 #include "utility.h"
 #include "init.h"
 #include "at32f423_usart.h"
-#include "at32f423_gpio.h"  //gpio
+#include "at32f423_gpio.h"  // GPIO peripheral driver
 
 
 //====================
 
-/** @brief External Dependency*/
+/** @brief External Dependency Declaration */
 extern void simple_read(void);
 can_rx_message_type can_rx_msg;
 // ======================================================
-/** @brief  Declaration Area for Continuous Function */
+/** @brief Continuous State Function Declaration Section */
 static void deFaultFunc(void);
 static void OrderFunc(void);
 static void lightFunc(void);
 static void monitorFunc(void);
 static void brightFunc(void);
-/** @brief  Declaration Area for Entering Function */
+/** @brief State Entry Function Declaration Section */
 static void enterDefault(const char* cmd_buf);
 static void enterOrder(const char* cmd_buf);
 static void enterLight(const char* cmd_buf);
 static void enterTemperature(const char* cmd_buf);
 static void enterBright(const char* cmd_buf);
 //===========================================
-/** @brief  Structure Declaration */ 
+/** @brief Structure Definition Section */
 typedef enum {
     GETIN_ORDER, RETURN_DEFAULT, ACT_LIGHT,
     ACT_MONITOR, ACT_BRIGHT, OFF, ERROR_DEMO
@@ -62,7 +62,7 @@ static Transition transition_table[]={
 };
 typedef void (*state_handler_t)(void);
 static state_handler_t state_handlers[]={
-    //通常这种结构不需要设置上下文
+    // Context variables are generally unnecessary for this architecture
     [DEFAULT]=deFaultFunc,
     [ORDER]=OrderFunc,
     [LIGHT]=lightFunc,
@@ -70,13 +70,13 @@ static state_handler_t state_handlers[]={
     [BRIGHT]=brightFunc,
 };
 
-//封装函数
+// Encapsulated helper function
 static Event stringToEvent(const char* str){
     if(strcmp(str,"Order")==0)return GETIN_ORDER;
     if(strcmp(str,"Return")==0)return RETURN_DEFAULT;
     if(strcmp(str,"Light")==0)return ACT_LIGHT;
     if(strcmp(str,"Monitor")==0)return ACT_MONITOR;
-    //two type of Bright command: "Bright 50" or "Bright"
+    // Two valid formats for Bright command: "Bright 50" or standalone "Bright"
     if(strncmp(str, "Bright ", 7) == 0)return ACT_BRIGHT;
     if(strcmp(str,"Bright")==0)return ACT_BRIGHT;
     if(strcmp(str,"Off")==0)return OFF;
@@ -89,7 +89,7 @@ static void fsm_handle_event(CommandType* current_state,Event event){
             return;
         }
     }
-    *current_state=ERROR_STATE;    
+    *current_state=ERROR_STATE;
 }
 static void fsm_enter(CommandType command,const char* cmd_buf){
     if(command<ERROR_STATE && enter_handlers[command] != NULL){
@@ -102,13 +102,13 @@ void fsm_conduct(CommandType *command){
     }
 }
 //=========================================
-/** @brief Entering and Func realization*/
+/** @brief State Entry Logic & Business Function Implementation*/
 //=========
-/** @brief Definition Area */
+/** @brief Function Definition Section */
 static void deFaultFunc(){
     static int hock = 0;
     static uint32_t last_toggle = 0;
-    uint32_t now = xTaskGetTickCount();//判断瞬间完成，无任何阻塞，不用担心
+    uint32_t now = xTaskGetTickCount();//Judgment completes instantly with no blocking; no task stall risk
     if (now - last_toggle >= 1000) {
         last_toggle = now;
         if(hock==0)
@@ -138,7 +138,7 @@ static void brightFunc(void){
     gpio_bits_reset(GPIOA, GPIO_PINS_0 | GPIO_PINS_1 | GPIO_PINS_2);
 }
 //=========
-/** @brief Parameter Analysis */
+/** @brief Command Parameter Parsing Functions */
 static void enterDefault(const char* cmd_buf){
     demoPrint("Entering DEFAULT state\r\n");
 }
@@ -153,7 +153,7 @@ static void enterLight(const char* cmd_buf){
 static void enterTemperature(const char* cmd_buf){
     demoPrint("Entering MONITORING state\r\n");
 }
-//It's needs more discussion here
+//Further discussion required for this implementation section
 static void pwm_set_duty(int percent,uint32_t pin){
     if(percent<0)percent=0;
     if(percent>100)percent=100;
@@ -169,7 +169,7 @@ static void pwm_set_duty(int percent,uint32_t pin){
     }
 }
 static void enterBright(const char* cmd_buf){
-    // 切换 PA0/PA1/PA2 到复用模式
+    // Reconfigure PA0/PA1/PA2 pins to alternate function mode for PWM
     shift_pwn_mode(GPIO_PINS_0 | GPIO_PINS_1 | GPIO_PINS_2);
 
     int b_value1,b_value2,b_value3,trash;
@@ -195,14 +195,14 @@ static void enterBright(const char* cmd_buf){
     }
     demoPrint("Entering BRIGHT state\r\n");
 }
-// Outter Interface Area
-void usart0comm(char* cmd_buf, int buf_size, int* cmd_idx){//回显操作废止
+// External Function Interface Section
+void usart0comm(char* cmd_buf, int buf_size, int* cmd_idx){//Echo function disabled
     int copy_len = uart_rx_len_read();
     if(copy_len>buf_size-1)copy_len=buf_size-1;
     for(int i = 0; i < copy_len; i++){
         cmd_buf[i] = usart_rx_buf_read(i);
     }
-    cmd_buf[copy_len] = '\0'; // 添加字符串结束符
+    cmd_buf[copy_len] = '\0'; // Append string terminator character
     *cmd_idx = copy_len;
     reset_usart_dma();
 }
@@ -222,7 +222,7 @@ void canComm(){
 }
 
 void fsm_analysis(CommandType* command, char* cmd_buf, int buf_size, int* cmd_idx){
-    cmd_buf[*cmd_idx - 1] = '\0'; *cmd_idx=0;// 去掉末尾的换行符
+    cmd_buf[*cmd_idx - 1] = '\0'; *cmd_idx=0;// Remove trailing newline/return character
     Event event = stringToEvent(cmd_buf);
     if(event == ERROR_DEMO) {
         demoPrint("Error: Unrecognized command %s\r\n", cmd_buf);
@@ -236,9 +236,9 @@ void fsm_analysis(CommandType* command, char* cmd_buf, int buf_size, int* cmd_id
         }
         else
             fsm_enter(*command, cmd_buf);
-    }demoPrint(">");
+    }
 }
-//=========== Data Interface Area ==========
+//=========== Data Access Interface Section ==========
 can_rx_message_type* can_rx_msg_get(void){
     return &can_rx_msg;
 }

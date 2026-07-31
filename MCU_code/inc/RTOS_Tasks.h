@@ -10,7 +10,7 @@ typedef struct{
     int len;
 } CmdMessage;
 //========Variable Area========
-extern TaskHandle_t usartTaskHandle;//本身是指针，地址不会变化不用volatile
+extern TaskHandle_t usartTaskHandle;//itself is a pointer, the address will not change, no need for volatile
 extern TaskHandle_t canTaskHandle;
 extern QueueHandle_t cmdQueue;
 //========Task Area========
