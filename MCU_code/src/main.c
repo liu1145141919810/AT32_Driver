@@ -5,7 +5,6 @@
 #include "Msg_Protocol.h"
 #include "RTOS_Tasks.h"
 #include "interrupt.h"
-#include "LogOutUtility.h"
 #include "utility.h"
 #include "LogOutUtility.h"
 void startup_call(void);

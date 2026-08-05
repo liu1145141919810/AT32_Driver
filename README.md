@@ -29,3 +29,6 @@ Error Detection for FreeRTOS init and add the io snippet before the activation o
 
 ## Version 0.8       20260804
 Fix the bugs about dma configuration for usart_tx ,logout cleaning and host receive optimization
+
+## Version 0.9       20260805
+Construct the data dealing and analysis paradigm in Host device (having debug for monitor state dealing)

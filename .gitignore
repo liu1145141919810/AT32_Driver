@@ -7,3 +7,6 @@ Reference/
 Makefile copy
 test.c
 *.sh
+*.pyc
+PC_code/data
+Old_code/*

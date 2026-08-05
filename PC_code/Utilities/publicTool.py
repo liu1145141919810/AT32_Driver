@@ -1,0 +1,18 @@
+WAITING_CONNECTING = 10 # seconds
+WAITING_START = 10
+WAITING_FRAME = 1
+CHECKING_DELAY = 0.001 # seconds
+STATE_NUM={
+    0:"DEFAULT",
+    1:"ORDER",
+    2:"LIGHT",
+    3:"MONITOR",
+    4:"BRIGHT",
+    5:"NOADDING",
+    6:"ERROR_EVENT",
+    7:"ERROR_STATE",
+}
+def demoPrint(msg):
+    print("\033[34m" + msg + "\033[0m")
+def infoPrint(msg):
+    print("\033[32m" + msg + "\033[0m")
