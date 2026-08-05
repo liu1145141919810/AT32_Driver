@@ -1,30 +1,57 @@
+#include "at32f423_gpio.h"
+#include "at32f423_dma.h"
+
+#include "LogOutUtility.h"
+#include "init.h"
+#include "Msg_Protocol.h"
 #include "RTOS_Tasks.h"
 #include "FSM.h"
-#include "queue.h"
-#include "at32f423_gpio.h"
-#include "utility.h"
-#include "init.h"
-#define BUF_SIZE 32
+#define CMD_BUF_SIZE 32
+#define PRINT_DMA_BUF_SIZE 5
 //Public Accessing Area
 
 //=====Interface Variable Area=====
 TaskHandle_t usartTaskHandle;
 TaskHandle_t canTaskHandle;
+TaskHandle_t usartTransmitTaskHandle;
 QueueHandle_t cmdQueue;
+void initcmdQueue(int length){
+    cmdQueue = xQueueCreate(length, sizeof(CmdMessage));
+}
 //=======   Tasks Area  ========
+void UsartTransmitTask(void *arg){//This is for usart output processing
+    static char tx_buf[64];  // Buffer for encapsulated frame data
+    Frame frame;
+    initPrintDMA(tx_buf, PRINT_DMA_BUF_SIZE);//Set the buffer size to 5
+    while(1){
+        if(QueueMsgReceive(&frame)){
+            // encapsulate: head + type + len + payload + crc
+            uint8_t frame_len = encapsulate_frame(tx_buf, frame);
+
+            dma_channel_enable(DMA1_CHANNEL3, FALSE);
+            dma_flag_clear(DMA1_FDT3_FLAG);//Erase the flags
+            dma_data_number_set(DMA1_CHANNEL3, frame_len);//regi write
+            DMA1_CHANNEL3->maddr = (uint32_t)tx_buf;
+            dma_channel_enable(DMA1_CHANNEL3, TRUE);
+
+            // Must configure the dma function for usart-tx
+            ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        }
+    }
+}
 void FSMTask(void *arg){
     CommandType command = DEFAULT;
     CmdMessage cmd;
     while(1){
         if(xQueueReceive(cmdQueue, &cmd, pdMS_TO_TICKS(0)) == pdPASS){
-            fsm_analysis(&command, cmd.cmd_buf, BUF_SIZE, &cmd.len);
+            fsm_analysis(&command, cmd.cmd_buf, CMD_BUF_SIZE, &cmd.len);
         }
         fsm_conduct(&command);
         vTaskDelay(1 / portTICK_PERIOD_MS);//Convert millisecond value to system ticks by dividing ms by tick period
         //This implementation enables more precise and stable delay timing
     }
 }
-void UsartTask(void *arg){
+void UsartTask(void *arg){//This is for the usart input processing
     CmdMessage cmd; 
     while(1){
         //Wait for UART event trigger
@@ -35,7 +62,7 @@ void UsartTask(void *arg){
         int xx=0;
         if(uart_rx_len_read()>0&&(usart_rx_buf_read(uart_rx_len_read()-1)=='\n'
         ||usart_rx_buf_read(uart_rx_len_read()-1)=='\r')){
-            usart0comm(cmd.cmd_buf, BUF_SIZE, &cmd.len);
+            usart0comm(cmd.cmd_buf, CMD_BUF_SIZE, &cmd.len);
             xQueueSend(// Transmit command data to FSM task through message queue
                 cmdQueue,
                 &cmd,
@@ -84,6 +111,19 @@ void CAN1_RX0_IRQHandler(void)
         //==== FreeRTOS Task Notification ====
         BaseType_t wakeup = pdFALSE;
         vTaskNotifyGiveFromISR(canTaskHandle, &wakeup);
+        portYIELD_FROM_ISR(wakeup);
+    }
+}
+//Design for the DMA finishing event
+
+void DMA1_Channel3_IRQHandler(void)
+{
+    if (dma_interrupt_flag_get(DMA1_FDT3_FLAG) != RESET)//Could find the finish event flag for DMA1 Channel 3 in head file
+    {
+        dma_flag_clear(DMA1_FDT3_FLAG);
+        //==== FreeRTOS Task Notification ====
+        BaseType_t wakeup = pdFALSE;
+        vTaskNotifyGiveFromISR(usartTransmitTaskHandle, &wakeup);
         portYIELD_FROM_ISR(wakeup);
     }
 }

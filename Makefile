@@ -12,6 +12,7 @@ INCLUDES += -I$(FW_LIB)/libraries/drivers/inc
 INCLUDES += -I.
 #INCLUDES += -I$(FW_LIB)/project/at32f423_board
 INCLUDES += -I./MCU_code/inc
+INCLUDES += -I./MCU_code/inc/Utilities
 INCLUDES += -I$(FW_LIB)/middlewares/freertos/source/include                         #add2
 INCLUDES += -I$(FW_LIB)/middlewares/freertos/source/portable/GCC/ARM_CM4F             #add3
 
@@ -37,6 +38,9 @@ OBJS += $(BUILD_DIR)/FSM.o
 OBJS += $(BUILD_DIR)/init.o
 OBJS += $(BUILD_DIR)/RTOS_Tasks.o
 OBJS += $(BUILD_DIR)/utility.o
+OBJS += $(BUILD_DIR)/Msg_Protocol.o
+OBJS += $(BUILD_DIR)/interrupt.o
+OBJS += $(BUILD_DIR)/LogOutUtility.o
 
 # FreeRTOS add3
 FREERTOS_SRC = $(FW_LIB)/middlewares/freertos/source
@@ -65,6 +69,11 @@ all: $(TARGET)
 $(BUILD_DIR)/%.o: MCU_code/src/%.c
 	mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/%.o: MCU_code/src/Utilities/%.c
+	mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
 
 $(BUILD_DIR)/system_at32f423.o: $(SYS_SRCS)
 	mkdir -p $(BUILD_DIR)

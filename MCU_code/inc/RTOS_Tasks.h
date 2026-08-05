@@ -9,11 +9,15 @@ typedef struct{
     char cmd_buf[BUF_SIZE];
     int len;
 } CmdMessage;
+typedef void (*Callback)(void);
 //========Variable Area========
+extern TaskHandle_t usartTransmitTaskHandle;
 extern TaskHandle_t usartTaskHandle;//itself is a pointer, the address will not change, no need for volatile
 extern TaskHandle_t canTaskHandle;
 extern QueueHandle_t cmdQueue;
+void initcmdQueue(int length);
 //========Task Area========
+void UsartTransmitTask(void *arg);
 void FSMTask(void *arg);
 void UsartTask(void *arg);
 void CanTask(void *arg);

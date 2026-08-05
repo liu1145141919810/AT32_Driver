@@ -12,7 +12,7 @@
 #define configIDLE_SHOULD_YIELD                 1//Whether the idle task yields when there are other idle-priority tasks
 
 /* Memory Management */
-#define configTOTAL_HEAP_SIZE                   ((size_t)(10240))//Kernel-managed dynamic memory pool size: 10KB
+#define configTOTAL_HEAP_SIZE                   ((size_t)(16384)) //Kernel-managed dynamic memory pool size: 16KB
 
 /* Optional Features — Disabled for Minimal Version */
 #define configUSE_MUTEXES                       0//Whether to use mutexes
@@ -36,7 +36,7 @@
 /* Dynamic Task APIs */
 #define INCLUDE_vTaskDelay                      1//Timed task delay
 #define INCLUDE_xTaskCreate                     1//Task creation
-#define INCLUDE_vTaskDelete                     0//Task deletion
+#define INCLUDE_vTaskDelete                     1//Task deletion
 #define INCLUDE_vTaskSuspend                    0//Task suspension
 #define INCLUDE_xTaskGetSchedulerState          0//Scheduler state query
 

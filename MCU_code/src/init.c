@@ -1,26 +1,20 @@
 #include <stdio.h>
-#include "init.h"
+
 #include "at32f423_tmr.h"
 
+#include "init.h"
+#include "public_define.h"
 #define ADC_VREF                         (3.3)
 #define ADC_TEMP_BASE                    (1.29)
 #define ADC_TEMP_SLOPE                   (-0.00426)
-#define MS_TICK (SystemCoreClock / 1000U)
-
-#define PRINT_UART                       USART1
-#define PRINT_UART_TX_GPIO_CRM_CLK       CRM_GPIOA_PERIPH_CLOCK
-#define PRINT_UART_TX_PIN                GPIO_PINS_9
-#define PRINT_UART_TX_GPIO               GPIOA
-#define PRINT_UART_TX_PIN_SOURCE         GPIO_PINS_SOURCE9
-#define PRINT_UART_CRM_CLK               CRM_USART1_PERIPH_CLOCK
-#define PRINT_UART_TX_PIN_MUX_NUM        GPIO_MUX_7
-
-#define USER_BUTTON_CRM_CLK              CRM_GPIOA_PERIPH_CLOCK
-#define USER_BUTTON_PIN                  GPIO_PINS_0
-#define USER_BUTTON_PORT                 GPIOA
 
 uint8_t usart_rx_buf[USART_RX_BUF_LEN];
 volatile uint16_t uart_rx_len = 0;
+/*DMA
+*Channel 1: for Tempature and Vref Monitor
+*Channel 2: for USART1 RX
+*Channel 3: for USART1 TX
+*/
 
 #include <unistd.h>  // Required for _write function redirection
 
@@ -103,7 +97,6 @@ void adc_config(void)
   adc_base_config_type adc_base_struct;
   crm_periph_clock_enable(CRM_ADC1_PERIPH_CLOCK, TRUE);
   adc_reset();
-  //nvic_irq_enable(ADC1_IRQn, 0, 0);
   crm_adc_clock_select(CRM_ADC_CLOCK_SOURCE_HCLK);
 
   adc_common_default_para_init(&adc_common_struct);
@@ -217,7 +210,6 @@ void init_usart_rv_dma_demo(){//USART1 RX DMA receiving initialization
     //==============================
     /** @brief DMA peripheral configuration dedicated to USART1 receive */
     dma_init_type dma_init_struct;
-    nvic_irq_enable(DMA1_Channel2_IRQn, 0, 0);
 
     dma_reset(DMA1_CHANNEL2);
     dma_default_para_init(&dma_init_struct);
@@ -240,7 +232,6 @@ void init_usart_rv_dma_demo(){//USART1 RX DMA receiving initialization
 
     // Frame termination detected by USART IDLE interrupt instead of DMA transfer complete interrupt
     usart_interrupt_enable(USART1, USART_IDLE_INT, TRUE);
-    nvic_irq_enable(USART1_IRQn, 0, 0);
 }
 void systick_1ms_init(void) {
     systick_clock_source_config(SYSTICK_CLOCK_SOURCE_AHBCLK_NODIV);
@@ -277,6 +268,8 @@ void uart_print_init(uint32_t baudrate)
   usart_init(PRINT_UART, baudrate, USART_DATA_8BITS, USART_STOP_1_BIT);
   usart_transmitter_enable(PRINT_UART, TRUE);
   usart_enable(PRINT_UART, TRUE);
+  //Must take the following configure to allow it use DMA
+  usart_dma_transmitter_enable(PRINT_UART, TRUE);
 }
 
 void at32_board_init()
@@ -349,7 +342,6 @@ void init_can1_demo(void)
     can_filter_init(CAN1, &can_filter_init_struct);
 
     /* Configure CAN receive interrupt priority */
-    nvic_irq_enable(CAN1_RX0_IRQn, 0x00, 0x00);
     can_interrupt_enable(CAN1, CAN_RF0MIEN_INT, TRUE);
 }
 
@@ -358,6 +350,30 @@ void reset_usart_dma(void){
     dma_channel_enable(DMA1_CHANNEL2, FALSE);
     dma_data_number_set(DMA1_CHANNEL2, USART_RX_BUF_LEN);
     dma_channel_enable(DMA1_CHANNEL2, TRUE);
+}
+void initPrintDMA(char* buffer,int length){
+    dma_init_type dma_init_struct;
+    dma_reset(DMA1_CHANNEL3);
+    dma_default_para_init(&dma_init_struct);
+    dma_init_struct.buffer_size = length;
+    dma_init_struct.direction = DMA_DIR_MEMORY_TO_PERIPHERAL;
+    dma_init_struct.memory_base_addr = (uint32_t)buffer;
+    dma_init_struct.memory_data_width = DMA_MEMORY_DATA_WIDTH_BYTE;
+    dma_init_struct.memory_inc_enable = TRUE;
+    dma_init_struct.peripheral_base_addr = (uint32_t)&USART1->dt;
+    dma_init_struct.peripheral_data_width = DMA_PERIPHERAL_DATA_WIDTH_BYTE;
+    dma_init_struct.peripheral_inc_enable = FALSE;
+    dma_init_struct.priority = DMA_PRIORITY_HIGH;
+    dma_init_struct.loop_mode_enable = FALSE;
+    dma_init(DMA1_CHANNEL3, &dma_init_struct);
+
+    dmamux_enable(DMA1, TRUE);
+    dmamux_init(DMA1MUX_CHANNEL3, DMAMUX_DMAREQ_ID_USART1_TX);// Configure DMAMUX channel 3, route USART1_TX request to DMA
+    
+    dma_interrupt_enable(DMA1_CHANNEL3, DMA_FDT_INT, TRUE);//Enable DMA interrupt for transfer complete
+    if(length > 0)
+        dma_channel_enable(DMA1_CHANNEL3, TRUE);
+
 }
 
 //=============== Public Data Read/Write Interface ======================

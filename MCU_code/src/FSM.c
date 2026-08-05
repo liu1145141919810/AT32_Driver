@@ -5,17 +5,18 @@
 
 #include "FreeRTOS.h"
 #include "task.h" // These two header files need to be included together
-#include "FSM.h"
-#include "utility.h"
-#include "init.h"
 #include "at32f423_usart.h"
 #include "at32f423_gpio.h"  // GPIO peripheral driver
 
+#include "FSM.h"
+#include "LogOutUtility.h"
+#include "init.h"
+#include "utility.h"  // Utility functions for hardware peripherals
 
 //====================
 
 /** @brief External Dependency Declaration */
-extern void simple_read(void);
+extern void simple_read(CommandType print_state);
 can_rx_message_type can_rx_msg;
 // ======================================================
 /** @brief Continuous State Function Declaration Section */
@@ -28,7 +29,7 @@ static void brightFunc(void);
 static void enterDefault(const char* cmd_buf);
 static void enterOrder(const char* cmd_buf);
 static void enterLight(const char* cmd_buf);
-static void enterTemperature(const char* cmd_buf);
+static void enterMonitor(const char* cmd_buf);
 static void enterBright(const char* cmd_buf);
 //===========================================
 /** @brief Structure Definition Section */
@@ -41,7 +42,7 @@ static state_enter_handler enter_handlers[]={
     [DEFAULT]=enterDefault,
     [ORDER]=enterOrder,
     [LIGHT]=enterLight,
-    [MONITOR]=enterTemperature,
+    [MONITOR]=enterMonitor,
     [BRIGHT]=enterBright,
 };
 typedef struct{
@@ -131,7 +132,7 @@ static void monitorFunc(void){
     uint32_t now = xTaskGetTickCount();
     if(now - last_toggle >= 4000) {
         last_toggle = now;
-        simple_read();
+        simple_read(MONITOR);
     }
 }
 static void brightFunc(void){
@@ -140,18 +141,18 @@ static void brightFunc(void){
 //=========
 /** @brief Command Parameter Parsing Functions */
 static void enterDefault(const char* cmd_buf){
-    demoPrint("Entering DEFAULT state\r\n");
+    msgPrint(DEFAULT,"Entering DEFAULT state");
 }
 static void enterOrder(const char* cmd_buf){
-    demoPrint("Entering ORDER state\r\n");
+    msgPrint(ORDER,"Entering ORDER state");
     wait_for_power_stable();
     init_gpio_demo();
 }
 static void enterLight(const char* cmd_buf){
-    demoPrint("Entering LIGHT state\r\n");
+    msgPrint(LIGHT,"Entering LIGHT state");
 }
-static void enterTemperature(const char* cmd_buf){
-    demoPrint("Entering MONITORING state\r\n");
+static void enterMonitor(const char* cmd_buf){
+    msgPrint(MONITOR,"Entering MONITOR state");
 }
 //Further discussion required for this implementation section
 static void pwm_set_duty(int percent,uint32_t pin){
@@ -190,10 +191,10 @@ static void enterBright(const char* cmd_buf){
         pwm_set_duty(b_value3, GPIO_PINS_2);
     }
     else{
-        demoPrint("Error: Invalid Bright command format\r\n");
-        demoPrint("Getting into default Bright case\r\n");
+        msgPrint(ERROR_EVENT,"Error: Invalid Bright command format");
+        msgPrint(ERROR_EVENT,"Getting into default Bright case");
     }
-    demoPrint("Entering BRIGHT state\r\n");
+    msgPrint(BRIGHT,"Entering BRIGHT state");
 }
 // External Function Interface Section
 void usart0comm(char* cmd_buf, int buf_size, int* cmd_idx){//Echo function disabled
@@ -209,11 +210,11 @@ void usart0comm(char* cmd_buf, int buf_size, int* cmd_idx){//Echo function disab
 
 void canComm(){
 
-    demoPrint("\r\n[CAN RX] ID=0x%03lX DLC=%d",
+    msgPrint(NOADDING,"\r\n[CAN RX] ID=0x%03lX DLC=%d",
             can_rx_msg.standard_id, can_rx_msg.dlc);
     for(int i = 0; i < can_rx_msg.dlc; i++)
-        demoPrint(" %02X", can_rx_msg.data[i]);
-    demoPrint("\r\n>");
+        msgPrint(NOADDING, " %02X", can_rx_msg.data[i]);
+    msgPrint(NOADDING,"\r\n>");
     uint8_t resp[8];
     resp[0] = can_rx_msg.data[0];
     resp[1] = 0xAB;
@@ -225,13 +226,13 @@ void fsm_analysis(CommandType* command, char* cmd_buf, int buf_size, int* cmd_id
     cmd_buf[*cmd_idx - 1] = '\0'; *cmd_idx=0;// Remove trailing newline/return character
     Event event = stringToEvent(cmd_buf);
     if(event == ERROR_DEMO) {
-        demoPrint("Error: Unrecognized command %s\r\n", cmd_buf);
+        msgPrint(ERROR_EVENT,"Error: Unrecognized command %s", cmd_buf);
     }
     else {
         fsm_handle_event(command, event);
         if(*command == ERROR_STATE) {
-            demoPrint("Error: Invalid transition for command %s\r\n", cmd_buf);
-            demoPrint("Recovering to DEFAULT state.\r\n");
+            msgPrint(ERROR,"Error: Invalid transition for command %s", cmd_buf);
+            msgPrint(DEFAULT,"Recovering to DEFAULT state.");
             *command = DEFAULT;
         }
         else

@@ -1,9 +1,7 @@
 #ifndef FSM_H
 #define FSM_H
 #include "at32f423_can.h"
-typedef enum{
-    DEFAULT,ORDER,LIGHT,MONITOR,BRIGHT,ERROR_STATE
-}CommandType; 
+#include "Msg_Protocol.h"
 void usart0comm(char* cmd_buf, int buf_size, int* cmd_idx);
 void canComm();
 void fsm_analysis(CommandType* command, char* cmd_buf, int buf_size, int* cmd_idx);
