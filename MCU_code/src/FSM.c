@@ -12,6 +12,7 @@
 #include "LogOutUtility.h"
 #include "init.h"
 #include "utility.h"  // Utility functions for hardware peripherals
+#include "public_define.h"  // Public macro definitions
 
 //====================
 
@@ -25,17 +26,19 @@ static void OrderFunc(void);
 static void lightFunc(void);
 static void monitorFunc(void);
 static void brightFunc(void);
+static void calibrateFunc(void);
 /** @brief State Entry Function Declaration Section */
 static void enterDefault(const char* cmd_buf);
 static void enterOrder(const char* cmd_buf);
 static void enterLight(const char* cmd_buf);
 static void enterMonitor(const char* cmd_buf);
 static void enterBright(const char* cmd_buf);
+static void enterCalibrate(const char* cmd_buf);
 //===========================================
 /** @brief Structure Definition Section */
 typedef enum {
     GETIN_ORDER, RETURN_DEFAULT, ACT_LIGHT,
-    ACT_MONITOR, ACT_BRIGHT, OFF, ERROR_DEMO
+    ACT_MONITOR, ACT_BRIGHT,SHIFT_CALIBRATE ,OFF, ERROR_DEMO
 } Event;
 typedef void (*state_enter_handler)(const char* cmd_buf);
 static state_enter_handler enter_handlers[]={
@@ -44,6 +47,7 @@ static state_enter_handler enter_handlers[]={
     [LIGHT]=enterLight,
     [MONITOR]=enterMonitor,
     [BRIGHT]=enterBright,
+    [CALIBRATE]=enterCalibrate,
 };
 typedef struct{
     CommandType from;
@@ -60,6 +64,8 @@ static Transition transition_table[]={
     {ORDER, ACT_BRIGHT, BRIGHT},
     {BRIGHT, OFF, ORDER},
     {BRIGHT, ACT_BRIGHT, BRIGHT},
+    {ORDER, SHIFT_CALIBRATE, CALIBRATE},
+    {CALIBRATE, SHIFT_CALIBRATE, ORDER},
 };
 typedef void (*state_handler_t)(void);
 static state_handler_t state_handlers[]={
@@ -69,6 +75,7 @@ static state_handler_t state_handlers[]={
     [LIGHT]=lightFunc,
     [MONITOR]=monitorFunc,
     [BRIGHT]=brightFunc,
+    [CALIBRATE]=calibrateFunc,
 };
 
 // Encapsulated helper function
@@ -80,6 +87,8 @@ static Event stringToEvent(const char* str){
     // Two valid formats for Bright command: "Bright 50" or standalone "Bright"
     if(strncmp(str, "Bright ", 7) == 0)return ACT_BRIGHT;
     if(strcmp(str,"Bright")==0)return ACT_BRIGHT;
+    if(strncmp(str, "Calibrate ", 10) == 0)return SHIFT_CALIBRATE;
+    if(strcmp(str,"Calibrate")==0)return SHIFT_CALIBRATE;
     if(strcmp(str,"Off")==0)return OFF;
     return ERROR_DEMO;
 }
@@ -130,7 +139,7 @@ static void lightFunc(void){
 static void monitorFunc(void){
     static uint32_t last_toggle = 0;
     uint32_t now = xTaskGetTickCount();
-    if(now - last_toggle >= 4000) {
+    if(now - last_toggle >= CALIBRATE_MONITOR_DELAY) {
         last_toggle = now;
         simple_read(MONITOR);
     }
@@ -138,6 +147,9 @@ static void monitorFunc(void){
 static void brightFunc(void){
     gpio_bits_reset(GPIOA, GPIO_PINS_0 | GPIO_PINS_1 | GPIO_PINS_2);
 }
+static void calibrateFunc(void){
+}
+
 //=========
 /** @brief Command Parameter Parsing Functions */
 static void enterDefault(const char* cmd_buf){
@@ -154,6 +166,16 @@ static void enterLight(const char* cmd_buf){
 static void enterMonitor(const char* cmd_buf){
     msgPrint(MONITOR,"Entering MONITOR state");
 }
+
+static void enterCalibrate(const char* cmd_buf){
+    msgPrint(CALIBRATE,"Entering CALIBRATE state");
+    // Implement calibration logic here
+    //for(int i=0;i<strlen(cmd_buf);i++){
+    //    if(cmd_buf[i]=='-')
+    //}
+
+}
+
 //Further discussion required for this implementation section
 static void pwm_set_duty(int percent,uint32_t pin){
     if(percent<0)percent=0;
@@ -169,6 +191,7 @@ static void pwm_set_duty(int percent,uint32_t pin){
         tmr_channel_value_set(TMR2, TMR_SELECT_CHANNEL_3, ccr_value);
     }
 }
+
 static void enterBright(const char* cmd_buf){
     // Reconfigure PA0/PA1/PA2 pins to alternate function mode for PWM
     shift_pwn_mode(GPIO_PINS_0 | GPIO_PINS_1 | GPIO_PINS_2);
@@ -196,15 +219,29 @@ static void enterBright(const char* cmd_buf){
     }
     msgPrint(BRIGHT,"Entering BRIGHT state");
 }
+
 // External Function Interface Section
 void usart0comm(char* cmd_buf, int buf_size, int* cmd_idx){//Echo function disabled
-    int copy_len = uart_rx_len_read();
-    if(copy_len>buf_size-1)copy_len=buf_size-1;
-    for(int i = 0; i < copy_len; i++){
-        cmd_buf[i] = usart_rx_buf_read(i);
+
+    //revise it to accept the frame
+    *cmd_idx = 0;
+    if (usart_rx_buf_read(0) == 0xAA) {
+        // Process the received frame
+        int state = usart_rx_buf_read(1); // Extract the state from the frame
+        int len = usart_rx_buf_read(2);   // Extract the length of the payload
+        if (len > 0 && len <= PAYLOAD_MAX_LEN) {
+            for (int i = 0; i < len; i++) 
+                cmd_buf[i] = usart_rx_buf_read(3 + i); // Copy the
+        }
+        cmd_buf[len] = '\0'; // Append string terminator character
+        *cmd_idx=len;
+        uint8_t crc=CRC8_MAXIM_calculate((uint8_t*)cmd_buf, *cmd_idx);
+        if (crc!=usart_rx_buf_read(3+len)){
+            //it would be directly discard
+            *cmd_idx = 0;
+        }
     }
-    cmd_buf[copy_len] = '\0'; // Append string terminator character
-    *cmd_idx = copy_len;
+    //Otherwise, it would be directly without anything
     reset_usart_dma();
 }
 

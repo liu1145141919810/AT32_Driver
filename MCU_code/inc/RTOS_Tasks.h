@@ -3,12 +3,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
-#define BUF_SIZE 32
 //========== Demo Structure =========
-typedef struct{
-    char cmd_buf[BUF_SIZE];
-    int len;
-} CmdMessage;
 typedef void (*Callback)(void);
 //========Variable Area========
 extern TaskHandle_t usartTransmitTaskHandle;

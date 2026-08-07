@@ -32,3 +32,11 @@ Fix the bugs about dma configuration for usart_tx ,logout cleaning and host rece
 
 ## Version 0.9       20260805
 Construct the data dealing and analysis paradigm in Host device (having debug for monitor state dealing)
+
+## Version 1.0       20260807
+Finish the bug of received data and program for calibration
+
+Calibration now include: time
+
+## Version 1.1
+MCU receive frame and command anaylzer for MCU side 

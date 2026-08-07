@@ -8,9 +8,10 @@ STATE_NUM={
     2:"LIGHT",
     3:"MONITOR",
     4:"BRIGHT",
-    5:"NOADDING",
-    6:"ERROR_EVENT",
-    7:"ERROR_STATE",
+    5:"CALIBRATE",
+    6:"NOADDING",
+    7:"ERROR_EVENT",
+    8:"ERROR_STATE",
 }
 def demoPrint(msg):
     print("\033[34m" + msg + "\033[0m")

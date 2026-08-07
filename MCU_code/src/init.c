@@ -142,7 +142,13 @@ void adc_config(void)
   adc_calibration_start(ADC1);
   while(adc_calibration_status_get(ADC1));
 }
-
+void config_time(int year, int month, int day,int weekday, int hour, int minute, int second) {
+    ertc_wait_update();
+    ertc_hour_mode_set(ERTC_HOUR_MODE_24);
+    ertc_date_set(year, month, day, weekday);
+    ertc_time_set(hour, minute, second, ERTC_24H);
+    ertc_bpr_data_write(ERTC_DT1, 0x1234);  // Write signature flag to indicate successful initialization
+}
 void ertc_init(void)
 {
     /* 1. Enable PWC clock to grant access to backup power domain */
@@ -168,11 +174,7 @@ void ertc_init(void)
     ertc_wait_update();
     ertc_divider_set(127, 255);  // 32768 / 128 / 256 ≈ 1Hz real-time clock tick
     /* 6. Configure calendar date and time */
-    ertc_hour_mode_set(ERTC_HOUR_MODE_24);
-    ertc_date_set(26, 7, 17, 5);  // Date: 2026-07-17, Friday
-    ertc_time_set(0, 0, 0, ERTC_24H);
-    /* 7. Write signature flag to indicate successful initialization */
-    ertc_bpr_data_write(ERTC_DT1, 0x1234);
+    config_time(26, 7, 17, 5, 0, 0, 0);  // Set initial time to 2026-07-17 00:00:00
 }
 void init_gpio_demo(){
     wait_for_power_stable();

@@ -37,23 +37,23 @@ class CommandManager:
     def HostMonitor(self,state,length,payload):
         temperature_data=[]
         vref_data=[]
-        temp_str="internal_temperature = "
-        vref_str="internal_vref = "
+        temp_str=b'internal_temperature = '
+        vref_str=b'internal_vref = '
         while state==None or tl.STATE_NUM[state]=="MONITOR":
             time.sleep(tl.CHECKING_DELAY)
             self.checkExitFlag()
-
+            
             #Blocking wait for new data to be available in the queue
             if state is None:
                 state,length,payload=self.resManager.outQueue()
                 continue
-            tl.infoPrint("Monitoring... (Press Ctrl+C to stop)")
-            
+
             if payload[:len(temp_str)]==temp_str:
-                temperature=float(payload.split("=")[1].split(" ")[0])
+                temperature=float(payload.decode(errors="ignore").split("=")[1].split(" ")[1])
                 temperature_data.append(temperature)
             elif payload[:len(vref_str)]==vref_str:
-                vref=float(payload.split("=")[1].split(" ")[0])
+                vref=float(payload.decode(errors="ignore").split("=")[1].split(" ")[1])
                 vref_data.append(vref)
             state,length,payload=self.resManager.outQueue()
+
         self.resManager.plot_receive((temperature_data,vref_data))

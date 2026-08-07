@@ -18,6 +18,15 @@ class Frame:
                 else:
                     crc >>= 1
         return crc
+    def packup(self,state,tx_msg):
+        self.head=0xAA
+        self.state=state
+        self.len=len(tx_msg)
+        self.payload=tx_msg.encode()
+        data=bytearray([self.head,self.state,self.len])+self.payload
+        self.crc=self.CRC8_MAXIN(data)
+        frame=data+bytearray([self.crc])
+        return frame
     def receive(self,ser):
         timeout_start = time.time()
         while True:
@@ -62,3 +71,7 @@ class MessageBus:
         if not self.plot_queue.empty():
             return self.plot_queue.get()
         return None
+    #Packup transmission data
+    def frameup(self,state,tx_msg):
+        frame=Frame()
+        return frame.packup(state,tx_msg)

@@ -6,6 +6,7 @@
 #include "Msg_Protocol.h"
 #include "RTOS_Tasks.h"
 #include "FSM.h"
+#include "Command_analyzer.h"
 #define CMD_BUF_SIZE 32
 #define PRINT_DMA_BUF_SIZE 5
 //Public Accessing Area
@@ -63,11 +64,16 @@ void UsartTask(void *arg){//This is for the usart input processing
         if(uart_rx_len_read()>0&&(usart_rx_buf_read(uart_rx_len_read()-1)=='\n'
         ||usart_rx_buf_read(uart_rx_len_read()-1)=='\r')){
             usart0comm(cmd.cmd_buf, CMD_BUF_SIZE, &cmd.len);
-            xQueueSend(// Transmit command data to FSM task through message queue
-                cmdQueue,
-                &cmd,
-                portMAX_DELAY
-            );
+            if(cmd.len>0)
+                xQueueSend(// Transmit command data to FSM task through message queue
+                    cmdQueue,
+                    &cmd,
+                    portMAX_DELAY
+                );
+            else if(cmd.len==0){
+                // Discard the command if the length is zero
+                msgPrint(ERROR_EVENT,"Error: Invalid command received, length is zero.");
+            }
         }
     }
 }

@@ -41,6 +41,7 @@ OBJS += $(BUILD_DIR)/utility.o
 OBJS += $(BUILD_DIR)/Msg_Protocol.o
 OBJS += $(BUILD_DIR)/interrupt.o
 OBJS += $(BUILD_DIR)/LogOutUtility.o
+OBJS += $(BUILD_DIR)/Command_analyzer.o
 
 # FreeRTOS add3
 FREERTOS_SRC = $(FW_LIB)/middlewares/freertos/source

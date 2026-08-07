@@ -15,4 +15,10 @@
 #define USER_BUTTON_PIN                  GPIO_PINS_0
 #define USER_BUTTON_PORT                 GPIOA
 
+//Calibrate
+#define CALIBRATE_MONITOR_DELAY 1000
+
+//Command
+#define CMD_BUF_SIZE 32
+
 #endif

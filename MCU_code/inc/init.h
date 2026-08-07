@@ -12,6 +12,7 @@ void system_clock_config(void);
 void dma_temp_velo_config(void);
 void pwm_init(void);
 void adc_config(void);
+void config_time(int year, int month, int day,int weekday, int hour, int minute, int second);
 void ertc_init(void);
 void init_gpio_demo(void);
 void init_usart_rv_dma_demo(void);

@@ -1,5 +1,6 @@
 from Utilities import messageBus, commandManager, uartCommunication
 import threading
+import time
 def argAnalyzer():
     import argparse
     parser = argparse.ArgumentParser(description="Host script for serial communication")
@@ -21,7 +22,6 @@ def picture_one(data,name):
     plt.show()
 
 def drawData(resManager,threads):
-    i=0;
     while True:
         #==     Getting Finished Telling ======
         if not any(thread.is_alive() for thread in threads):
@@ -29,9 +29,10 @@ def drawData(resManager,threads):
         plot_data = resManager.plot_get()
         if plot_data is not None:
             temperature_data, vref_data = plot_data
-            picture_one(temperature_data, "Temperature"+str(i))
-            picture_one(vref_data, "VREF"+str(i))
-        i+=1
+            t=time.time()
+            t_str=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(t))
+            picture_one(temperature_data, "Temperature "+t_str)
+            picture_one(vref_data, "VREF "+t_str)
 
 if __name__ == "__main__":
     args=argAnalyzer()

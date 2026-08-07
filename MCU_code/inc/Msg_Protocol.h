@@ -12,7 +12,7 @@ typedef struct{//Maximum is 64 bytes of payload and 69 bytes of total
     uint8_t crc;
 }Frame;
 typedef enum{
-    DEFAULT,ORDER,LIGHT,MONITOR,BRIGHT,NOADDING,ERROR_EVENT,ERROR_STATE
+    DEFAULT,ORDER,LIGHT,MONITOR,BRIGHT,CALIBRATE,NOADDING,ERROR_EVENT,ERROR_STATE
 }CommandType; //The deep realize is digit starting from 0
 void initPrintQueue(int length);
 uint8_t QueueMsgReceive(Frame* frame);

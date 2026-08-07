@@ -10,3 +10,4 @@ test.c
 *.pyc
 PC_code/data
 Old_code/*
+PC_code/Data/*
