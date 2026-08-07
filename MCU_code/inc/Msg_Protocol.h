@@ -16,7 +16,8 @@ typedef enum{
 }CommandType; //The deep realize is digit starting from 0
 void initPrintQueue(int length);
 uint8_t QueueMsgReceive(Frame* frame);
-//====== Print Logic Unit ======
+//====== IO Logic Unit ======
 void msgPrint(CommandType command, const char* payload,...);
 uint8_t encapsulate_frame(char* buffer,Frame frame);
+uint8_t CRC8_MAXIM_calculate(uint8_t *data, uint16_t len);
 #endif

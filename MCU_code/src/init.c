@@ -174,7 +174,7 @@ void ertc_init(void)
     ertc_wait_update();
     ertc_divider_set(127, 255);  // 32768 / 128 / 256 ≈ 1Hz real-time clock tick
     /* 6. Configure calendar date and time */
-    config_time(26, 7, 17, 5, 0, 0, 0);  // Set initial time to 2026-07-17 00:00:00
+    //config_time(26, 7, 17, 5, 0, 0, 0);  // Set initial time to 2026-07-17 00:00:00
 }
 void init_gpio_demo(){
     wait_for_power_stable();

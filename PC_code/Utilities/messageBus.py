@@ -39,11 +39,15 @@ class Frame:
                 continue
             if byte[0]!=0xAA:
                 continue
-            self.head=byte[0]
-            self.state=ser.read(1)[0]
-            self.len=ser.read(1)[0]
-            self.payload=ser.read(self.len)
-            self.crc=ser.read(1)[0]
+            try:
+                self.head=byte[0]
+                self.state=ser.read(1)[0]
+                self.len=ser.read(1)[0]
+                self.payload=ser.read(self.len)
+                self.crc=ser.read(1)[0]
+            except Exception as e:
+                tl.demoPrint("Error occurred while reading from serial port: {}".format(e))
+                return False
             data=bytearray([self.head,self.state,self.len])+self.payload
             crc=self.CRC8_MAXIN(data)
             if crc==self.crc:

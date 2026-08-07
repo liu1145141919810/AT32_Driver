@@ -10,6 +10,7 @@ class CommandManager:
             "LIGHT":None,
             "MONITOR":self.HostMonitor,
             "BRIGHT":None,
+            "CALIBRATE":None,
             "NOADDING":None,
             "ERROR_EVENT":None,
             "ERROR_STATE":None,

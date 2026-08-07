@@ -38,14 +38,19 @@ class UartCommunication:
             tl.demoPrint("Host already exit the communication.")
             self.cmdManager.setExitFlag()
             sys.exit(0)
-        frame=self.resManager.frameup(tx_msg)+'\r\n'
+        frame=self.resManager.frameup(tl.PUBLIC_DEFAULT_STATE,tx_msg)+b'\r\n'
         self.ser.write(frame)
     def calibration(self):
         #Time calibration
         t=time.time()
-        t_str=time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime(t))
+        t_str=time.strftime("%y %m %d %w %H %M %S", time.localtime(t))
         tl.demoPrint("Time "+t_str)
         tl.demoPrint("Time")
+        #Calibration emit
+        frame=self.resManager.frameup(tl.PUBLIC_DEFAULT_STATE,"Calibrate "+t_str)+b'\r\n'
+        self.ser.write(frame)
+        frame=self.resManager.frameup(tl.PUBLIC_DEFAULT_STATE,"Calibrate")+b'\r\n'
+        self.ser.write(frame)
     def run(self):
         #Initialization
         self.calibration();

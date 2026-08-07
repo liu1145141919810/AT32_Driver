@@ -38,5 +38,5 @@ Finish the bug of received data and program for calibration
 
 Calibration now include: time
 
-## Version 1.1
-MCU receive frame and command anaylzer for MCU side 
+## Version 1.1       20260808
+MCU receive frame ,command anaylzer for MCU side ，reading edge problem dealing

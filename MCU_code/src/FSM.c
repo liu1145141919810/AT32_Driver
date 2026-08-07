@@ -12,6 +12,7 @@
 #include "LogOutUtility.h"
 #include "init.h"
 #include "utility.h"  // Utility functions for hardware peripherals
+#include "Command_analyzer.h"
 #include "public_define.h"  // Public macro definitions
 
 //====================
@@ -28,19 +29,16 @@ static void monitorFunc(void);
 static void brightFunc(void);
 static void calibrateFunc(void);
 /** @brief State Entry Function Declaration Section */
-static void enterDefault(const char* cmd_buf);
-static void enterOrder(const char* cmd_buf);
-static void enterLight(const char* cmd_buf);
-static void enterMonitor(const char* cmd_buf);
-static void enterBright(const char* cmd_buf);
-static void enterCalibrate(const char* cmd_buf);
+static void enterDefault(Command event);
+static void enterOrder(Command event);
+static void enterLight(Command event);
+static void enterMonitor(Command event);
+static void enterBright(Command event);
+static void enterCalibrate(Command event);
 //===========================================
 /** @brief Structure Definition Section */
-typedef enum {
-    GETIN_ORDER, RETURN_DEFAULT, ACT_LIGHT,
-    ACT_MONITOR, ACT_BRIGHT,SHIFT_CALIBRATE ,OFF, ERROR_DEMO
-} Event;
-typedef void (*state_enter_handler)(const char* cmd_buf);
+
+typedef void (*state_enter_handler)(Command event);
 static state_enter_handler enter_handlers[]={
     [DEFAULT]=enterDefault,
     [ORDER]=enterOrder,
@@ -64,8 +62,8 @@ static Transition transition_table[]={
     {ORDER, ACT_BRIGHT, BRIGHT},
     {BRIGHT, OFF, ORDER},
     {BRIGHT, ACT_BRIGHT, BRIGHT},
-    {ORDER, SHIFT_CALIBRATE, CALIBRATE},
-    {CALIBRATE, SHIFT_CALIBRATE, ORDER},
+    {DEFAULT, SHIFT_CALIBRATE, CALIBRATE},
+    {CALIBRATE, SHIFT_CALIBRATE, DEFAULT},
 };
 typedef void (*state_handler_t)(void);
 static state_handler_t state_handlers[]={
@@ -78,20 +76,6 @@ static state_handler_t state_handlers[]={
     [CALIBRATE]=calibrateFunc,
 };
 
-// Encapsulated helper function
-static Event stringToEvent(const char* str){
-    if(strcmp(str,"Order")==0)return GETIN_ORDER;
-    if(strcmp(str,"Return")==0)return RETURN_DEFAULT;
-    if(strcmp(str,"Light")==0)return ACT_LIGHT;
-    if(strcmp(str,"Monitor")==0)return ACT_MONITOR;
-    // Two valid formats for Bright command: "Bright 50" or standalone "Bright"
-    if(strncmp(str, "Bright ", 7) == 0)return ACT_BRIGHT;
-    if(strcmp(str,"Bright")==0)return ACT_BRIGHT;
-    if(strncmp(str, "Calibrate ", 10) == 0)return SHIFT_CALIBRATE;
-    if(strcmp(str,"Calibrate")==0)return SHIFT_CALIBRATE;
-    if(strcmp(str,"Off")==0)return OFF;
-    return ERROR_DEMO;
-}
 static void fsm_handle_event(CommandType* current_state,Event event){
     for(int i=0;i<sizeof(transition_table)/sizeof(Transition);i++){
         if(transition_table[i].from==*current_state && transition_table[i].event==event){
@@ -101,9 +85,9 @@ static void fsm_handle_event(CommandType* current_state,Event event){
     }
     *current_state=ERROR_STATE;
 }
-static void fsm_enter(CommandType command,const char* cmd_buf){
+static void fsm_enter(CommandType command,Command event){
     if(command<ERROR_STATE && enter_handlers[command] != NULL){
-        enter_handlers[command](cmd_buf);
+        enter_handlers[command](event);
     }
 }
 void fsm_conduct(CommandType *command){
@@ -152,28 +136,30 @@ static void calibrateFunc(void){
 
 //=========
 /** @brief Command Parameter Parsing Functions */
-static void enterDefault(const char* cmd_buf){
+static void enterDefault(Command event){
     msgPrint(DEFAULT,"Entering DEFAULT state");
 }
-static void enterOrder(const char* cmd_buf){
+static void enterOrder(Command event){
     msgPrint(ORDER,"Entering ORDER state");
     wait_for_power_stable();
     init_gpio_demo();
 }
-static void enterLight(const char* cmd_buf){
+static void enterLight(Command event){
     msgPrint(LIGHT,"Entering LIGHT state");
 }
-static void enterMonitor(const char* cmd_buf){
+static void enterMonitor(Command event){
     msgPrint(MONITOR,"Entering MONITOR state");
 }
 
-static void enterCalibrate(const char* cmd_buf){
+static void enterCalibrate(Command event){
     msgPrint(CALIBRATE,"Entering CALIBRATE state");
     // Implement calibration logic here
-    //for(int i=0;i<strlen(cmd_buf);i++){
-    //    if(cmd_buf[i]=='-')
-    //}
-
+    if(event.param_count!=7){
+        msgPrint(ERROR_EVENT,"Error: Invalid number of parameters for calibration");
+        return;
+    }
+    config_time(event.params[0], event.params[1], event.params[2],
+                event.params[3], event.params[4], event.params[5], event.params[6]);
 }
 
 //Further discussion required for this implementation section
@@ -192,26 +178,25 @@ static void pwm_set_duty(int percent,uint32_t pin){
     }
 }
 
-static void enterBright(const char* cmd_buf){
+static void enterBright(Command event){
     // Reconfigure PA0/PA1/PA2 pins to alternate function mode for PWM
     shift_pwn_mode(GPIO_PINS_0 | GPIO_PINS_1 | GPIO_PINS_2);
 
     int b_value1,b_value2,b_value3,trash;
-    int matched = sscanf(cmd_buf, "Bright %d %d %d %d", &b_value1, &b_value2, &b_value3, &trash);
-    if(matched==-1){
+    if(event.param_count == 0){
         pwm_set_duty(0, GPIO_PINS_0);
     }
-    else if(matched==1){
-        pwm_set_duty(b_value1, GPIO_PINS_0);
+    else if(event.param_count == 1){
+        pwm_set_duty(event.params[0], GPIO_PINS_0);
     }
-    else if(matched==2){
-        pwm_set_duty(b_value1, GPIO_PINS_0);
-        pwm_set_duty(b_value2, GPIO_PINS_1);
+    else if(event.param_count == 2){
+        pwm_set_duty(event.params[0], GPIO_PINS_0);
+        pwm_set_duty(event.params[1], GPIO_PINS_1);
     }
-    else if(matched==3){
-        pwm_set_duty(b_value1, GPIO_PINS_0);
-        pwm_set_duty(b_value2, GPIO_PINS_1);
-        pwm_set_duty(b_value3, GPIO_PINS_2);
+    else if(event.param_count == 3){
+        pwm_set_duty(event.params[0], GPIO_PINS_0);
+        pwm_set_duty(event.params[1], GPIO_PINS_1);
+        pwm_set_duty(event.params[2], GPIO_PINS_2);
     }
     else{
         msgPrint(ERROR_EVENT,"Error: Invalid Bright command format");
@@ -229,13 +214,21 @@ void usart0comm(char* cmd_buf, int buf_size, int* cmd_idx){//Echo function disab
         // Process the received frame
         int state = usart_rx_buf_read(1); // Extract the state from the frame
         int len = usart_rx_buf_read(2);   // Extract the length of the payload
+
+        char calculate[PAYLOAD_MAX_LEN+3];
+        calculate[0] = 0xAA;
+        calculate[1] = state;
+        calculate[2] = len;
+
         if (len > 0 && len <= PAYLOAD_MAX_LEN) {
-            for (int i = 0; i < len; i++) 
+            for (int i = 0; i < len; i++){
                 cmd_buf[i] = usart_rx_buf_read(3 + i); // Copy the
+                calculate[i + 3] = cmd_buf[i]; 
+            }
         }
         cmd_buf[len] = '\0'; // Append string terminator character
-        *cmd_idx=len;
-        uint8_t crc=CRC8_MAXIM_calculate((uint8_t*)cmd_buf, *cmd_idx);
+        *cmd_idx=len+1;
+        uint8_t crc=CRC8_MAXIM_calculate((uint8_t*)calculate, len + 3);
         if (crc!=usart_rx_buf_read(3+len)){
             //it would be directly discard
             *cmd_idx = 0;
@@ -261,19 +254,19 @@ void canComm(){
 
 void fsm_analysis(CommandType* command, char* cmd_buf, int buf_size, int* cmd_idx){
     cmd_buf[*cmd_idx - 1] = '\0'; *cmd_idx=0;// Remove trailing newline/return character
-    Event event = stringToEvent(cmd_buf);
-    if(event == ERROR_DEMO) {
+    Command event = parseCommand(cmd_buf);
+    if(event.event == ERROR_DEMO) {
         msgPrint(ERROR_EVENT,"Error: Unrecognized command %s", cmd_buf);
     }
     else {
-        fsm_handle_event(command, event);
+        fsm_handle_event(command, event.event);//Next command state get
         if(*command == ERROR_STATE) {
             msgPrint(ERROR,"Error: Invalid transition for command %s", cmd_buf);
             msgPrint(DEFAULT,"Recovering to DEFAULT state.");
             *command = DEFAULT;
         }
         else
-            fsm_enter(*command, cmd_buf);
+            fsm_enter(*command, event);
     }
 }
 //=========== Data Access Interface Section ==========
