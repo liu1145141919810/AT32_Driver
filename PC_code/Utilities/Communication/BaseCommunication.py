@@ -1,5 +1,6 @@
 import queue
 import time
+from abc import ABC, abstractmethod
 
 from .. import publicTool as tl
 class Frame:
@@ -32,7 +33,7 @@ class Frame:
         timeout_start = time.time()
         while True:
             if time.time() - timeout_start > tl.WAITING_FRAME:
-                tl.demoPrint("Timeout: No data received within the waiting time.")
+                tl.sysPrint("Timeout: No data received within the waiting time.")
                 return False
             byte = ser.read(1)
             #print("Received byte: {}".format(byte))
@@ -47,25 +48,46 @@ class Frame:
                 self.payload=ser.read(self.len)
                 self.crc=ser.read(1)[0]
             except Exception as e:
-                tl.demoPrint("Error occurred while reading from serial port: {}".format(e))
+                tl.sysPrint("Error occurred while reading from serial port: {}".format(e))
                 return False
             data=bytearray([self.head,self.state,self.len])+self.payload
             crc=self.CRC8_MAXIN(data)
             if crc==self.crc:
                 return True
             else:
-                tl.demoPrint("CRC error: expected {}, got {}".format(crc, self.crc))
+                tl.sysPrint("CRC error: expected {}, got {}".format(crc, self.crc))
                 return False
+
+            
+class Communication(ABC):
+    @abstractmethod
+    def __init__(self):
+        pass
+    @abstractmethod
+    def prework(self):
+        pass
+    @abstractmethod
+    def tell_transmit(self):
+        pass
+    @abstractmethod
+    def tell_receive(self):
+        pass
+    @abstractmethod
+    def transmit(self):
+        pass
+    @abstractmethod
+    def receive(self):
+        pass
 
 class MessageBus:
     def __init__(self):
         self.rx_queue = queue.Queue()
         self.plot_queue = queue.Queue()
-    def receive(self,ser):
+    def usart_receive(self,ser):
         frame=Frame()
         if frame.receive(ser):
             self.rx_queue.put(frame)
-    def outQueue(self):
+    def usart_outQueue(self):
         if not self.rx_queue.empty():
             result=self.rx_queue.get()
             return result.state,result.len,result.payload
@@ -76,7 +98,7 @@ class MessageBus:
         if not self.plot_queue.empty():
             return self.plot_queue.get()
         return None
-    #Packup transmission data
+    #Packup transmission data into byyestream
     def frameup(self,state,tx_msg):
         frame=Frame()
         return frame.packup(state,tx_msg)

@@ -40,3 +40,8 @@ Calibration now include: time
 
 ## Version 1.1       20260808
 MCU receive frame ,command anaylzer for MCU side ，reading edge problem dealing
+
+## Version 1.2       20260810
+Optimize the sturcture and other perparations for CAN communication promation
+
+## Version 1.3       20260811

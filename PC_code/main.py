@@ -1,5 +1,6 @@
 from Utilities.Communication import BaseCommunication
 from Utilities.Commander import Hostcommand
+from Utilities.Commander import MCUcommand
 from Utilities.Communication import CommunicationManager as communi
 import threading
 import time
@@ -39,15 +40,16 @@ def drawData(resManager,threads):
 if __name__ == "__main__":
     args=argAnalyzer()
     resManager = BaseCommunication.MessageBus()
-    cmdManager = Hostcommand.CommandManager(resManager)
-    uartManager = communi.ComManager(
+    hostManager = Hostcommand.HostManager(resManager)
+    mcuManager = MCUcommand.MCUManager(resManager)
+    commuManager = communi.ComManager(
         args.port,
         args.baudrate,
         resManager,
-        cmdManager)
+        hostManager)
 
-    thread1=threading.Thread(target=uartManager.run, args=())
-    thread2=threading.Thread(target=cmdManager.run, args=())
+    thread1=threading.Thread(target=commuManager.run, args=())
+    thread2=threading.Thread(target=hostManager.run, args=())
     threads = [thread1, thread2]
     thread1.start()
     thread2.start()

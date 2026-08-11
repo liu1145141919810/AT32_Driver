@@ -16,7 +16,7 @@ STATE_NUM={
     7:"ERROR_EVENT",
     8:"ERROR_STATE",
 }
-def demoPrint(msg):
+def sysPrint(msg):
     print("\033[34m" + msg + "\033[0m")
 def infoPrint(msg):
     print("\033[32m" + msg + "\033[0m")
