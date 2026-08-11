@@ -51,16 +51,21 @@ class UartCommunication:
         self.ser.write(frame)
         frame=self.resManager.frameup(tl.PUBLIC_DEFAULT_STATE,"Calibrate")+b'\r\n'
         self.ser.write(frame)
-    def run(self):
-        #Initialization
+    # ==============Out Interface Area===============
+    def prework(self):
         self.calibration();
-        while True:
-            ready,_,_=select.select(
-                            [sys.stdin,self.ser],[],[])
-            for source in ready:
-                if source == sys.stdin:
-                    tx_msg=sys.stdin.readline().rstrip()
-                    self.typeinOrder(tx_msg)
-                elif source == self.ser:
-                    self.resManager.receive(self.ser)
-            time.sleep(tl.CHECKING_DELAY)
+    def tell_transmit(self):
+        ready,_,_=select.select([sys.stdin,self.ser],[],[])
+        if sys.stdin in ready:
+            return True
+        return False
+    def tell_receive(self):
+        ready,_,_=select.select([sys.stdin,self.ser],[],[])
+        if self.ser in ready:
+            return True
+        return False
+    def transmit(self):
+        tx_msg=sys.stdin.readline().rstrip()
+        self.typeinOrder(tx_msg)
+    def receive(self):
+        self.resManager.receive(self.ser)

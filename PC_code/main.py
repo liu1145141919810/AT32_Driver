@@ -1,6 +1,6 @@
 from Utilities.Communication import BaseCommunication
 from Utilities.Commander import Hostcommand
-from Utilities.Communication import UartCommunication
+from Utilities.Communication import CommunicationManager as communi
 import threading
 import time
 def argAnalyzer():
@@ -40,8 +40,8 @@ if __name__ == "__main__":
     args=argAnalyzer()
     resManager = BaseCommunication.MessageBus()
     cmdManager = Hostcommand.CommandManager(resManager)
-    uartManager = UartCommunication.UartCommunication(
-        args.port, 
+    uartManager = communi.ComManager(
+        args.port,
         args.baudrate,
         resManager,
         cmdManager)
