@@ -2,6 +2,7 @@ from Utilities.Communication import BaseCommunication
 from Utilities.Commander import Hostcommand
 from Utilities.Commander import MCUcommand
 from Utilities.Communication import CommunicationManager as communi
+from Utilities import publicTool as tl
 import threading
 import time
 def argAnalyzer():
@@ -46,13 +47,21 @@ if __name__ == "__main__":
         args.port,
         args.baudrate,
         resManager,
-        hostManager)
+        hostManager,
+        mcuManager if tl.COMMUNICATION_MODE == "can" else None
+        )
 
     thread1=threading.Thread(target=commuManager.run, args=())
     thread2=threading.Thread(target=hostManager.run, args=())
     threads = [thread1, thread2]
     thread1.start()
     thread2.start()
+    if tl.COMMUNICATION_MODE == "can":
+        thread3=threading.Thread(target=mcuManager.run, args=())
+        threads.append(thread3)
+        thread3.start()
     drawData(resManager,threads)
     thread1.join()
     thread2.join()
+    if tl.COMMUNICATION_MODE == "can":
+        thread3.join()

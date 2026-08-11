@@ -81,15 +81,17 @@ class Communication(ABC):
 
 class MessageBus:
     def __init__(self):
-        self.rx_queue = queue.Queue()
+        self.uart_queue_rx = queue.Queue()
         self.plot_queue = queue.Queue()
+        self.can_queue_tx = queue.Queue()
+        self.can_queue_rx = queue.Queue()
     def usart_receive(self,ser):
         frame=Frame()
         if frame.receive(ser):
-            self.rx_queue.put(frame)
+            self.uart_queue_rx.put(frame)
     def usart_outQueue(self):
-        if not self.rx_queue.empty():
-            result=self.rx_queue.get()
+        if not self.uart_queue_rx.empty():
+            result=self.uart_queue_rx.get()
             return result.state,result.len,result.payload
         return None,None,None
     def plot_receive(self,data):
@@ -102,3 +104,14 @@ class MessageBus:
     def frameup(self,state,tx_msg):
         frame=Frame()
         return frame.packup(state,tx_msg)
+    #Construct a Queue for can frames
+    def can_tx_receive(self,can_msg):
+        self.can_queue_tx.put(can_msg)
+    def can_tx_transmit(self):
+        if not self.can_queue_tx.empty():
+            return self.can_queue_tx.get()
+        return None
+    def can_rx_receive(self,can_msg):
+        pass
+    def can_rx_transmit(self):
+        pass

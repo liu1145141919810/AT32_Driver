@@ -45,3 +45,4 @@ MCU receive frame ,command anaylzer for MCU side ，reading edge problem dealing
 Optimize the sturcture and other perparations for CAN communication promation
 
 ## Version 1.3       20260811
+Could send the formated can into MCU periodly and  receive the callback into host queue

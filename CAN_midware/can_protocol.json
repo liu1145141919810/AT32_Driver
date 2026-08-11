@@ -1,47 +1,46 @@
-[
+{
+    "command":
     {
-        "delay":1000,
-        "Cmd":"ORDER",
-        "args":[]
+        "ORDER": 256,
+        "RETURN": 257,
+        "LIGHT": 258,
+        "MONITOR":259,
+        "BRIGHT":260,
+        "CALIBRATE":261,
+        "OFF":262,
+        "ERROR_DEMO":263
     },
+
+
+    "report":
     {
-        "delay":1,
-        "Cmd":"UNDEFINED",
-        "args":[]
+        "768":"DEFAULT",
+        "769":"ORDER",
+        "770":"LIGHT",
+        "771":{
+            "state":"MONITOR",
+            "substate":"internal_temperature = "
+        },
+        "772":{
+            "state":"MONITOR",
+            "substate":"internal_vref = "
+        },
+        "773":"BRIGHT",
+        "774":"CALIBRATE",
+        "775":"NOADDING",
+        "776":"ERROR_EVENT",
+        "777":"ERROR_STATE"
     },
+    "state_num":
     {
-        "delay":1,
-        "Cmd":"LIGHT",
-        "args":[]
-    },
-    {
-        "delay":1000,
-        "Cmd":"OFF",
-        "args":[]
-    },
-    {
-        "delay":1,
-        "Cmd":"BRIGHT",
-        "args":[99,99,99]
-    },
-    {
-        "delay":1000,
-        "Cmd":"BRIGHT",
-        "args":[40,40,99]
-    },
-    {
-        "delay":1000,
-        "Cmd":"OFF",
-        "args":[]
-    },
-    {
-        "delay":1,
-        "Cmd":"MONITOR",
-        "args":[]
-    },
-    {
-        "delay":100000,
-        "Cmd":"OFF",
-        "args":[]
+        "0":"DEFAULT",
+        "1":"ORDER",
+        "2":"LIGHT",
+        "3":"MONITOR",
+        "4":"BRIGHT",
+        "5":"CALIBRATE",
+        "6":"NOADDING",
+        "7":"ERROR_EVENT",
+        "8":"ERROR_STATE"
     }
-]
+}

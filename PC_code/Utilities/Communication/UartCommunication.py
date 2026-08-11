@@ -6,9 +6,9 @@ from .. import publicTool as tl
 from .BaseCommunication import Communication
 #Both Usart Input and Output are administrated here
 class UartCommunication(Communication):
-    def __init__(self,port, baudrate, resManager, cmdManager):
+    def __init__(self,port, baudrate, resManager, hostManager):
         self.resManager = resManager
-        self.cmdManager = cmdManager
+        self.hostManager = hostManager
         try:
             self.ser = serial.Serial(
                             port=port,
@@ -37,7 +37,7 @@ class UartCommunication(Communication):
     def typeinOrder(self,tx_msg):
         if(tx_msg == "HostExit"):
             tl.sysPrint("Host already exit the communication.")
-            self.cmdManager.setExitFlag()
+            self.hostManager.setExitFlag()
             sys.exit(0)
         frame=self.resManager.frameup(tl.PUBLIC_DEFAULT_STATE,tx_msg)+b'\r\n'
         self.ser.write(frame)
