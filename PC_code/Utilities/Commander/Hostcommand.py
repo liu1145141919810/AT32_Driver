@@ -1,6 +1,8 @@
-from . import publicTool as tl
 import time
 import sys
+
+sys.path.append("..")
+from .. import publicTool as tl
 class CommandManager:
     def __init__(self,resManager):
         self.resManager = resManager

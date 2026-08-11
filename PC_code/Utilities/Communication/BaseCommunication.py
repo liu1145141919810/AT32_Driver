@@ -1,6 +1,7 @@
 import queue
-from . import publicTool as tl
 import time
+
+from .. import publicTool as tl
 class Frame:
     def __init__(self):
         self.head=0

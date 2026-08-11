@@ -1,4 +1,6 @@
-from Utilities import messageBus, commandManager, uartCommunication
+from Utilities.Communication import BaseCommunication
+from Utilities.Commander import Hostcommand
+from Utilities.Communication import UartCommunication
 import threading
 import time
 def argAnalyzer():
@@ -36,9 +38,9 @@ def drawData(resManager,threads):
 
 if __name__ == "__main__":
     args=argAnalyzer()
-    resManager = messageBus.MessageBus()
-    cmdManager = commandManager.CommandManager(resManager)
-    uartManager = uartCommunication.UartCommunication(
+    resManager = BaseCommunication.MessageBus()
+    cmdManager = Hostcommand.CommandManager(resManager)
+    uartManager = UartCommunication.UartCommunication(
         args.port, 
         args.baudrate,
         resManager,

@@ -2,7 +2,7 @@ import time
 import serial
 import select
 import sys
-from . import publicTool as tl
+from .. import publicTool as tl
 #Both Usart Input and Output are administrated here
 class UartCommunication:
     def __init__(self,port, baudrate, resManager, cmdManager):
