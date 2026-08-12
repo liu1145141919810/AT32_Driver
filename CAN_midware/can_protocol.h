@@ -1,0 +1,12 @@
+#ifndef CAN_PROTOCOL_H
+#define CAN_PROTOCOL_H
+#define CMD_ORDER 256
+#define CMD_RETURN 257
+#define CMD_LIGHT 258
+#define CMD_MONITOR 259
+#define CMD_BRIGHT 260
+#define CMD_CALIBRATE 261
+#define CMD_OFF 262
+#define CMD_ERROR_DEMO 263
+
+#endif

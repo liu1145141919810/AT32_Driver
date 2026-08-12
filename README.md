@@ -46,3 +46,6 @@ Optimize the sturcture and other perparations for CAN communication promation
 
 ## Version 1.3       20260811
 Could send the formated can into MCU periodly and  receive the callback into host queue
+
+## Version 1.4       20260812
+Can frame command analysis and feed back in MCU

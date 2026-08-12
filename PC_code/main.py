@@ -2,6 +2,7 @@ from Utilities.Communication import BaseCommunication
 from Utilities.Commander import Hostcommand
 from Utilities.Commander import MCUcommand
 from Utilities.Communication import CommunicationManager as communi
+from Utilities.Translate import Translate
 from Utilities import publicTool as tl
 import threading
 import time
@@ -39,6 +40,10 @@ def drawData(resManager,threads):
             picture_one(vref_data, "VREF "+t_str)
 
 if __name__ == "__main__":
+    #Translate
+    Translator=Translate.Translate()
+    Translator.translate()
+    # Normal working flow running
     args=argAnalyzer()
     resManager = BaseCommunication.MessageBus()
     hostManager = Hostcommand.HostManager(resManager)
