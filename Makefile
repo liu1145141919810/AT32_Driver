@@ -10,6 +10,7 @@ INCLUDES = -I$(FW_LIB)/libraries/cmsis/cm4/core_support
 INCLUDES += -I$(FW_LIB)/libraries/cmsis/cm4/device_support
 INCLUDES += -I$(FW_LIB)/libraries/drivers/inc
 INCLUDES += -I.
+INCLUDES += -I./CAN_midware
 #INCLUDES += -I$(FW_LIB)/project/at32f423_board
 INCLUDES += -I./MCU_code/inc
 INCLUDES += -I./MCU_code/inc/Utilities
@@ -42,6 +43,7 @@ OBJS += $(BUILD_DIR)/Msg_Protocol.o
 OBJS += $(BUILD_DIR)/interrupt.o
 OBJS += $(BUILD_DIR)/LogOutUtility.o
 OBJS += $(BUILD_DIR)/Command_analyzer.o
+OBJS += $(BUILD_DIR)/canUtility.o
 
 # FreeRTOS add3
 FREERTOS_SRC = $(FW_LIB)/middlewares/freertos/source

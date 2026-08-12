@@ -2,6 +2,7 @@
 #include "at32f423_dma.h"
 
 #include "LogOutUtility.h"
+#include "canUtility.h"
 #include "init.h"
 #include "Msg_Protocol.h"
 #include "RTOS_Tasks.h"
@@ -15,9 +16,11 @@
 TaskHandle_t usartTaskHandle;
 TaskHandle_t canTaskHandle;
 TaskHandle_t usartTransmitTaskHandle;
-QueueHandle_t cmdQueue;
+QueueHandle_t UsartcmdQueue;
+QueueHandle_t CancmdQueue;
 void initcmdQueue(int length){
-    cmdQueue = xQueueCreate(length, sizeof(CmdMessage));
+    UsartcmdQueue = xQueueCreate(length, sizeof(UsartCmdMessage));
+    CancmdQueue = xQueueCreate(length, sizeof(Command));
 }
 //=======   Tasks Area  ========
 void UsartTransmitTask(void *arg){//This is for usart output processing
@@ -42,10 +45,14 @@ void UsartTransmitTask(void *arg){//This is for usart output processing
 }
 void FSMTask(void *arg){
     CommandType command = DEFAULT;
-    CmdMessage cmd;
+    UsartCmdMessage cmd;
+    Command can_cmd;
     while(1){
-        if(xQueueReceive(cmdQueue, &cmd, pdMS_TO_TICKS(0)) == pdPASS){
-            fsm_analysis(&command, cmd.cmd_buf, CMD_BUF_SIZE, &cmd.len);
+        if(xQueueReceive(UsartcmdQueue, &cmd, pdMS_TO_TICKS(0)) == pdPASS){
+            usart_fsm_analysis(&command, cmd.cmd_buf, CMD_BUF_SIZE, &cmd.len);
+        }
+        if(xQueueReceive(CancmdQueue, &can_cmd, pdMS_TO_TICKS(0)) == pdPASS){
+            can_fsm_analysis(&command, &can_cmd);
         }
         fsm_conduct(&command);
         vTaskDelay(1 / portTICK_PERIOD_MS);//Convert millisecond value to system ticks by dividing ms by tick period
@@ -53,20 +60,19 @@ void FSMTask(void *arg){
     }
 }
 void UsartTask(void *arg){//This is for the usart input processing
-    CmdMessage cmd; 
+    UsartCmdMessage cmd; 
     while(1){
         //Wait for UART event trigger
         ulTaskNotifyTake(
             pdTRUE,
             portMAX_DELAY
         );
-        int xx=0;
         if(uart_rx_len_read()>0&&(usart_rx_buf_read(uart_rx_len_read()-1)=='\n'
         ||usart_rx_buf_read(uart_rx_len_read()-1)=='\r')){
             usart0comm(cmd.cmd_buf, CMD_BUF_SIZE, &cmd.len);
             if(cmd.len>0)
                 xQueueSend(// Transmit command data to FSM task through message queue
-                    cmdQueue,
+                    UsartcmdQueue,
                     &cmd,
                     portMAX_DELAY
                 );
@@ -78,12 +84,22 @@ void UsartTask(void *arg){//This is for the usart input processing
     }
 }
 void CanTask(void *arg){
+    Command cmd;
     while(1){
         ulTaskNotifyTake(
             pdTRUE,
             portMAX_DELAY
         );
-        canComm();
+    analyze_can_msg(&cmd);
+    xQueueSend(
+        CancmdQueue,
+        &cmd,
+        portMAX_DELAY
+    );
+    uint8_t resp[8];
+    resp[1] = 0xAB;
+    resp[2] = 0xCD;
+    canSendBack(0x300, resp, 3);
     }
 }
 //======= Interrupt Handlers ======

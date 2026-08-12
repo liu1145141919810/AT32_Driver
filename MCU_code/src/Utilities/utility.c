@@ -55,16 +55,3 @@ void shift_pwn_mode(uint32_t pin){
     tmr_output_channel_config(TMR2, TMR_SELECT_CHANNEL_2, &tmr_output_struct);
     tmr_output_channel_config(TMR2, TMR_SELECT_CHANNEL_3, &tmr_output_struct);
 }
-
-void can1_send(uint32_t id, uint8_t *data, uint8_t len)
-{
-    can_tx_message_type tx_msg;
-    tx_msg.standard_id = id;
-    tx_msg.extended_id = 0;//Id for the extended frame, not used in this demo
-    tx_msg.id_type = CAN_ID_STANDARD;
-    tx_msg.frame_type = CAN_TFT_DATA;
-    tx_msg.dlc = len;
-    for (int i = 0; i < len && i < 8; i++)
-        tx_msg.data[i] = data[i];
-    can_message_transmit(CAN1, &tx_msg);
-}

@@ -41,12 +41,14 @@ class CanCommunication(Communication):
     def transmit(self):
         self.exitPreTelling()
         msg=self.resManager.can_tx_transmit()
+        tl.sysPrint("CAN Transmit: ID=0x{:X}, Data={}".format(msg.arbitration_id, msg.data.hex()))
         if msg is not None:
             self.bus.send(msg)
     def receive(self):
         msg = self._rx_cache
         self._rx_cache = None
         if msg is not None:
+            tl.infoPrint("CAN Receive: ID=0x{:X}, Data={}".format(msg.arbitration_id, msg.data.hex()))
             self.resManager.can_rx_receive(msg)
 if __name__ == "__main__":
     can_comm=CanCommunication(None,None,None)

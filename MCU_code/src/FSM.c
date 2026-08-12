@@ -12,14 +12,12 @@
 #include "LogOutUtility.h"
 #include "init.h"
 #include "utility.h"  // Utility functions for hardware peripherals
-#include "Command_analyzer.h"
 #include "public_define.h"  // Public macro definitions
 
 //====================
 
 /** @brief External Dependency Declaration */
 extern void simple_read(CommandType print_state);
-can_rx_message_type can_rx_msg;
 // ======================================================
 /** @brief Continuous State Function Declaration Section */
 static void deFaultFunc(void);
@@ -237,22 +235,7 @@ void usart0comm(char* cmd_buf, int buf_size, int* cmd_idx){//Echo function disab
     //Otherwise, it would be directly without anything
     reset_usart_dma();
 }
-
-void canComm(){
-
-    msgPrint(NOADDING,"\r\n[CAN RX] ID=0x%03lX DLC=%d",
-            can_rx_msg.standard_id, can_rx_msg.dlc);
-    for(int i = 0; i < can_rx_msg.dlc; i++)
-        msgPrint(NOADDING, " %02X", can_rx_msg.data[i]);
-    msgPrint(NOADDING,"\r\n>");
-    uint8_t resp[8];
-    resp[0] = can_rx_msg.data[0];
-    resp[1] = 0xAB;
-    resp[2] = 0xCD;
-    can1_send(0x300, resp, 3);
-}
-
-void fsm_analysis(CommandType* command, char* cmd_buf, int buf_size, int* cmd_idx){
+void usart_fsm_analysis(CommandType* command, char* cmd_buf, int buf_size, int* cmd_idx){
     cmd_buf[*cmd_idx - 1] = '\0'; *cmd_idx=0;// Remove trailing newline/return character
     Command event = parseCommand(cmd_buf);
     if(event.event == ERROR_DEMO) {
@@ -269,7 +252,18 @@ void fsm_analysis(CommandType* command, char* cmd_buf, int buf_size, int* cmd_id
             fsm_enter(*command, event);
     }
 }
-//=========== Data Access Interface Section ==========
-can_rx_message_type* can_rx_msg_get(void){
-    return &can_rx_msg;
+void can_fsm_analysis(CommandType* command,Command* event){
+    if(event->event==ERROR_DEMO)
+    msgPrint(ERROR_EVENT,"Error: Unrecognized CAN command");
+    else{
+        fsm_handle_event(command,event->event);
+        if(*command==ERROR_STATE){
+            msgPrint(ERROR,"Error: Invalid transition for CAN command");
+            msgPrint(DEFAULT,"Recovering to DEFAULT state.");
+            *command=DEFAULT;
+        }
+        else
+            fsm_enter(*command,*event);
+    }
 }
+//=========== Data Access Interface Section ==========

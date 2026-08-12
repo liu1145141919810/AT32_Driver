@@ -9,7 +9,7 @@ typedef enum {
 typedef struct{
     char cmd_buf[CMD_BUF_SIZE];
     int len;
-} CmdMessage;
+} UsartCmdMessage;
 typedef struct{
     Event event;
     int params[8];
