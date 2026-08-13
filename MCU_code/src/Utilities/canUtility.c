@@ -13,7 +13,7 @@ void initCanTransmitQueue(int length){
     CanTransmitQueue = xQueueCreate(length, sizeof(can_tx_message_type));
 }
 uint8_t canTransmitQueueSend(can_tx_message_type* tx_msg){
-    return (xQueueSend(CanTransmitQueue, tx_msg, portMAX_DELAY)==pdPASS);
+    return (xQueueReceive(CanTransmitQueue, tx_msg, portMAX_DELAY)==pdPASS);
 }
 
 static can_tx_message_type can1_prepare(uint32_t id, uint8_t *data, uint8_t len)
