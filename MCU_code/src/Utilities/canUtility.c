@@ -66,9 +66,15 @@ static Transition_T can_send_table[]={
     {ERROR_EVENT,RPT_ERROR_EVENT},
     {ERROR_STATE,RPT_ERROR_STATE}
 };
-static uint16_t can_command_to_id(CommandType command){
+static uint16_t can_command_to_id(CommandType command,uint8_t substate){
     for(int i=0;i<sizeof(can_send_table)/sizeof(Transition_T);i++){
         if(can_send_table[i].command==command){
+            if (command==MONITOR&&substate==1){
+                if (substate==1)
+                    return RPT_MONITOR_INTERNAL_TEMPERATURE;
+                else if (substate==2)
+                    return RPT_MONITOR_INTERNAL_VREF;
+            }
             return can_send_table[i].id;
         }
     }return 0xFFFF;
@@ -85,12 +91,12 @@ void canSendBack(CommandType command,int arg_num,...){
     va_list args;
     va_start(args, arg_num);
 
-    uint8_t data[8];
+    uint8_t data[8];data[0]=0;
     uint8_t len=arg_num>8?8:arg_num;
     for(int i=0;i<len;i++){
         data[i]=(uint8_t)va_arg(args,int);
     }
-    uint16_t id=can_command_to_id(command);
+    uint16_t id=can_command_to_id(command, data[0]);
     can_tx_message_type tx_msg=can1_prepare(id,data,len);
     xQueueSend(
         CanTransmitQueue,

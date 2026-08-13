@@ -1,5 +1,7 @@
-#include "utility.h"
 #include "at32f423_can.h"
+
+#include "canUtility.h"
+#include "utility.h"
 #include "init.h"
 #include "Msg_Protocol.h"
 #define ADC_VREF                         (3.3)
@@ -11,10 +13,18 @@ void simple_read(CommandType print_state){
     //This place could also be optimized
     while(dma_flag_get(DMA1_FDT1_FLAG) == RESET);
     dma_flag_clear(DMA1_FDT1_FLAG);
-    msgPrint(print_state,"internal_temperature = %.2f deg C",
-        (ADC_TEMP_BASE - (double)adc_read(0) * ADC_VREF / 4095) / ADC_TEMP_SLOPE + 25);
-    msgPrint(print_state,"internal_vref = %.3f V",
-        ((double)1.2 * 4095) / (double)adc_read(1));
+    double temp= (ADC_TEMP_BASE - (double)adc_read(0) * ADC_VREF / 4095) / ADC_TEMP_SLOPE + 25;
+    double vref = (double)1.2 * 4095 / (double)adc_read(1);
+    msgPrint(print_state,"internal_temperature = %.2f deg C",temp);
+    msgPrint(print_state,"internal_vref = %.3f V",vref);
+    if (print_state == MONITOR){
+            uint8_t low_temp=(uint8_t)((int)temp&0xFF);
+            uint8_t high_temp=(uint8_t)(((int)temp>>8)&0xFF);
+            uint8_t low_vref=(uint8_t)((int)(vref*1000)&0xFF);
+            uint8_t high_vref=(uint8_t)((((int)(vref*1000))>>8)&0xFF);
+            canSendBack(print_state,3,1,low_temp,high_temp);
+            canSendBack(print_state,3,2,low_vref,high_vref);
+        }
     }
 /* Single output of current time */
 void ertc_print_time(CommandType print_state)
