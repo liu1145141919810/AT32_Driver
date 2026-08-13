@@ -42,7 +42,7 @@ def drawData(resManager,threads):
 if __name__ == "__main__":
     #Translate
     Translator=Translate.Translate()
-    Translator.translate()
+    Translator.translateH()
     # Normal working flow running
     args=argAnalyzer()
     resManager = BaseCommunication.MessageBus()

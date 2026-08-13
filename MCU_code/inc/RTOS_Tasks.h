@@ -13,6 +13,7 @@ extern QueueHandle_t cmdQueue;
 void initcmdQueue(int length);
 //========Task Area========
 void UsartTransmitTask(void *arg);
+void CanTransmitTask(void *arg);
 void FSMTask(void *arg);
 void UsartTask(void *arg);
 void CanTask(void *arg);

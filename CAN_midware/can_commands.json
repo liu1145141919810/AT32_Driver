@@ -6,11 +6,6 @@
     },
     {
         "delay":1,
-        "Cmd":"UNDEFINED",
-        "args":[]
-    },
-    {
-        "delay":1,
         "Cmd":"LIGHT",
         "args":[]
     },
@@ -40,8 +35,13 @@
         "args":[]
     },
     {
-        "delay":100000,
+        "delay":1,
         "Cmd":"OFF",
+        "args":[]
+    },
+    {
+        "delay":1,
+        "Cmd":"RETURN",
         "args":[]
     }
 ]

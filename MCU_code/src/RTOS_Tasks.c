@@ -43,6 +43,14 @@ void UsartTransmitTask(void *arg){//This is for usart output processing
         }
     }
 }
+void CanTransmitTask(void * arg){
+    static can_tx_message_type can_tx;
+    while(1){
+        if(canTransmitQueueSend(&can_tx)){
+            can_message_transmit(CAN1, &can_tx);
+        }
+    }
+}
 void FSMTask(void *arg){
     CommandType command = DEFAULT;
     UsartCmdMessage cmd;
@@ -96,10 +104,6 @@ void CanTask(void *arg){
         &cmd,
         portMAX_DELAY
     );
-    uint8_t resp[8];
-    resp[1] = 0xAB;
-    resp[2] = 0xCD;
-    canSendBack(0x300, resp, 3);
     }
 }
 //======= Interrupt Handlers ======

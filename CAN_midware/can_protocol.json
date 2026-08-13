@@ -17,19 +17,20 @@
         "768":"DEFAULT",
         "769":"ORDER",
         "770":"LIGHT",
-        "771":{
-            "state":"MONITOR",
-            "substate":"internal_temperature = "
-        },
+        "771":"MONITOR",
         "772":{
             "state":"MONITOR",
-            "substate":"internal_vref = "
+            "substate":"_internal_temperature"
         },
-        "773":"BRIGHT",
-        "774":"CALIBRATE",
-        "775":"NOADDING",
-        "776":"ERROR_EVENT",
-        "777":"ERROR_STATE"
+        "773":{
+            "state":"MONITOR",
+            "substate":"_internal_vref"
+        },
+        "774":"BRIGHT",
+        "775":"CALIBRATE",
+        "776":"NOADDING",
+        "777":"ERROR_EVENT",
+        "778":"ERROR_STATE"
     },
     "state_num":
     {

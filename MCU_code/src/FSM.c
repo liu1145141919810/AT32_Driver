@@ -12,6 +12,7 @@
 #include "LogOutUtility.h"
 #include "init.h"
 #include "utility.h"  // Utility functions for hardware peripherals
+#include "canUtility.h"
 #include "public_define.h"  // Public macro definitions
 
 //====================
@@ -85,6 +86,8 @@ static void fsm_handle_event(CommandType* current_state,Event event){
 }
 static void fsm_enter(CommandType command,Command event){
     if(command<ERROR_STATE && enter_handlers[command] != NULL){
+        //Can transmit for every enter is added here!
+        canSendBack(command,0);
         enter_handlers[command](event);
     }
 }

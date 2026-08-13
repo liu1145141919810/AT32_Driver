@@ -7,6 +7,7 @@
 #include "interrupt.h"
 #include "utility.h"
 #include "LogOutUtility.h"
+#include "canUtility.h"
 void startup_call(void);
 void initwork(){
     system_clock_config();  //Configure system clock to 144 MHz, consistent with configCPU_CLOCK_HZ
@@ -33,11 +34,16 @@ void beginInfo(void){
     simple_read(print_state);
 }
 void RTOSInit(void){
-    initcmdQueue(5);
-    initPrintQueue(5);
+    int size=5;
+    initcmdQueue(size);
+    initPrintQueue(size);
+    initCanTransmitQueue(size);
 
-    if(xTaskCreate(UsartTransmitTask,"transmit",512,NULL,2,&usartTransmitTaskHandle) != pdPASS){
+    if(xTaskCreate(UsartTransmitTask,"usart_transmit",512,NULL,2,&usartTransmitTaskHandle) != pdPASS){
         // 任务创建失败！堆内存不足
+        while(1);
+    }
+    if(xTaskCreate(CanTransmitTask,"can_transmit",512,NULL,2,NULL) != pdPASS){
         while(1);
     }
     if(xTaskCreate(FSMTask, "work", 512, NULL, 1, NULL) != pdPASS){//Sole apply Sole Task
