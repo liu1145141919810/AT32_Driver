@@ -28,57 +28,6 @@ static can_tx_message_type can1_prepare(uint32_t id, uint8_t *data, uint8_t len)
         tx_msg.data[i] = data[i];
     return tx_msg;
 }
-//======== Receive Table for Can =========
-typedef struct{
-    uint16_t id;
-    Event event;
-}Transition_R;
-static Transition_R can_receive_table[]={
-    {CMD_ORDER, GETIN_ORDER},
-    {CMD_RETURN, RETURN_DEFAULT},
-    {CMD_LIGHT, ACT_LIGHT},
-    {CMD_MONITOR, ACT_MONITOR},
-    {CMD_BRIGHT, ACT_BRIGHT},
-    {CMD_CALIBRATE, SHIFT_CALIBRATE},
-    {CMD_OFF, OFF},
-    {CMD_ERROR_DEMO, ERROR_DEMO}
-};
-static Event can_id_to_event(uint16_t id){
-    for(int i=0;i<sizeof(can_receive_table)/sizeof(Transition_R);i++){
-        if(can_receive_table[i].id==id){
-            return can_receive_table[i].event;
-        }
-    }return ERROR_DEMO;
-}
-//======== Send Table for Can =========
-typedef struct{
-    CommandType command;
-    uint16_t id;
-}Transition_T;
-static Transition_T can_send_table[]={
-    {DEFAULT,RPT_DEFAULT},
-    {ORDER,RPT_ORDER},
-    {LIGHT,RPT_LIGHT},
-    {MONITOR,RPT_MONITOR},
-    {BRIGHT,RPT_BRIGHT},
-    {CALIBRATE,RPT_CALIBRATE},
-    {NOADDING,RPT_NOADDING},
-    {ERROR_EVENT,RPT_ERROR_EVENT},
-    {ERROR_STATE,RPT_ERROR_STATE}
-};
-static uint16_t can_command_to_id(CommandType command,uint8_t substate){
-    for(int i=0;i<sizeof(can_send_table)/sizeof(Transition_T);i++){
-        if(can_send_table[i].command==command){
-            if (command==MONITOR&&substate!=0){
-                if (substate==1)
-                    return RPT_MONITOR_INTERNAL_TEMPERATURE;
-                else if (substate==2)
-                    return RPT_MONITOR_INTERNAL_VREF;
-            }
-            return can_send_table[i].id;
-        }
-    }return 0xFFFF;
-}
 void analyze_can_msg(Command* cmd){
     cmd->event=can_id_to_event(can_rx_msg.standard_id);
     cmd->param_count=can_rx_msg.dlc;

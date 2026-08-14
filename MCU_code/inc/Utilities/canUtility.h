@@ -2,7 +2,7 @@
 #define CAN_UTILITY_H
 #include "at32f423_can.h"
 #include <stdint.h>
-#include <Command_analyzer.h>
+#include "Command_analyzer.h"
 //=======Currently: only could be used by RTOS_Tasks.c
 void initCanTransmitQueue(int length);
 uint8_t canTransmitQueueSend(can_tx_message_type* tx_msg);

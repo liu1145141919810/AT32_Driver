@@ -1,12 +1,12 @@
 [
     {
         "delay":1000,
-        "Cmd":"ORDER",
+        "Cmd":"GETIN_ORDER",
         "args":[]
     },
     {
         "delay":1,
-        "Cmd":"LIGHT",
+        "Cmd":"ACT_LIGHT",
         "args":[]
     },
     {
@@ -16,12 +16,12 @@
     },
     {
         "delay":1,
-        "Cmd":"BRIGHT",
+        "Cmd":"ACT_BRIGHT",
         "args":[99,99,99]
     },
     {
         "delay":1000,
-        "Cmd":"BRIGHT",
+        "Cmd":"ACT_BRIGHT",
         "args":[40,40,99]
     },
     {
@@ -31,12 +31,17 @@
     },
     {
         "delay":1,
-        "Cmd":"MONITOR",
+        "Cmd":"ACT_MONITOR",
         "args":[]
     },
     {
-        "delay":60000,
+        "delay":6000,
         "Cmd":"OFF",
+        "args":[]
+    },
+    {
+        "delay":1,
+        "Cmd":"RETURN_DEFAULT",
         "args":[]
     }
 ]

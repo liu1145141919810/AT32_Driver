@@ -44,6 +44,7 @@ OBJS += $(BUILD_DIR)/interrupt.o
 OBJS += $(BUILD_DIR)/LogOutUtility.o
 OBJS += $(BUILD_DIR)/Command_analyzer.o
 OBJS += $(BUILD_DIR)/canUtility.o
+OBJS += $(BUILD_DIR)/can_protocol.o
 
 # FreeRTOS add3
 FREERTOS_SRC = $(FW_LIB)/middlewares/freertos/source
@@ -74,6 +75,10 @@ $(BUILD_DIR)/%.o: MCU_code/src/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%.o: MCU_code/src/Utilities/%.c
+	mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/can_protocol.o: CAN_midware/can_protocol.c
 	mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 

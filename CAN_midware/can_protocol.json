@@ -1,16 +1,15 @@
 {
     "command":
     {
-        "ORDER": 256,
-        "RETURN": 257,
-        "LIGHT": 258,
-        "MONITOR":259,
-        "BRIGHT":260,
-        "CALIBRATE":261,
+        "GETIN_ORDER": 256,
+        "RETURN_DEFAULT": 257,
+        "ACT_LIGHT": 258,
+        "ACT_MONITOR":259,
+        "ACT_BRIGHT":260,
+        "SHIFT_CALIBRATE":261,
         "OFF":262,
         "ERROR_DEMO":263
     },
-
 
     "report":
     {

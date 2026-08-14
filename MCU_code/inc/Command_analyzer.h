@@ -2,10 +2,7 @@
 #define COMMAND_ANALYZER_H
 #include "public_define.h"
 #include "Msg_Protocol.h"
-typedef enum {
-    GETIN_ORDER, RETURN_DEFAULT, ACT_LIGHT,
-    ACT_MONITOR, ACT_BRIGHT,SHIFT_CALIBRATE ,OFF, ERROR_DEMO
-} Event;
+#include "typeBasement.h"
 typedef struct{
     char cmd_buf[CMD_BUF_SIZE];
     int len;

@@ -1,23 +1,19 @@
 #ifndef CAN_PROTOCOL_H
-#define CAN_PROTOCOL_H
-#define CMD_ORDER 256
-#define CMD_RETURN 257
-#define CMD_LIGHT 258
-#define CMD_MONITOR 259
-#define CMD_BRIGHT 260
-#define CMD_CALIBRATE 261
-#define CMD_OFF 262
-#define CMD_ERROR_DEMO 263
+//This file is auto-generated, and could only be used by canUtility.c
 
-#define RPT_DEFAULT 768
-#define RPT_ORDER 769
-#define RPT_LIGHT 770
-#define RPT_MONITOR 771
-#define RPT_MONITOR_INTERNAL_TEMPERATURE 772
-#define RPT_MONITOR_INTERNAL_VREF 773
-#define RPT_BRIGHT 774
-#define RPT_CALIBRATE 775
-#define RPT_NOADDING 776
-#define RPT_ERROR_EVENT 777
-#define RPT_ERROR_STATE 778
+#include "Msg_Protocol.h"
+#include "Command_analyzer.h"
+
+#define CAN_PROTOCOL_H
+
+typedef struct {
+    CommandType command;
+    uint16_t id;
+} Transition_T;
+typedef struct {
+    uint16_t id;
+    Event event;
+} Transition_R;
+Event can_id_to_event(uint16_t id);
+uint16_t can_command_to_id(CommandType command,uint8_t substate);
 #endif // CAN_PROTOCOL_H

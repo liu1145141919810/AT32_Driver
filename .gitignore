@@ -1,7 +1,6 @@
 .vscode/
 AT32F423_Firmware_Library_V2.1.0
 build/
-.gitignore
 *.txt
 Reference/
 Makefile copy
