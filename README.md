@@ -49,3 +49,6 @@ Could send the formated can into MCU periodly and  receive the callback into hos
 
 ## Version 1.4       20260812
 Can frame command analysis and feed back in MCU
+
+## Version 1.5       20260814
+MCU transmit the analysis result back ,host dealing, and debug for the relevant problems

@@ -69,7 +69,7 @@ static Transition_T can_send_table[]={
 static uint16_t can_command_to_id(CommandType command,uint8_t substate){
     for(int i=0;i<sizeof(can_send_table)/sizeof(Transition_T);i++){
         if(can_send_table[i].command==command){
-            if (command==MONITOR&&substate==1){
+            if (command==MONITOR&&substate!=0){
                 if (substate==1)
                     return RPT_MONITOR_INTERNAL_TEMPERATURE;
                 else if (substate==2)

@@ -48,7 +48,6 @@ class CanCommunication(Communication):
         msg = self._rx_cache
         self._rx_cache = None
         if msg is not None:
-            tl.infoPrint("CAN Receive: ID=0x{:X}, Data={}".format(msg.arbitration_id, msg.data.hex()))
             self.resManager.can_rx_receive(msg)
 if __name__ == "__main__":
     can_comm=CanCommunication(None,None,None)

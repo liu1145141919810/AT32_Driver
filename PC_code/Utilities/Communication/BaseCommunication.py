@@ -112,6 +112,8 @@ class MessageBus:
             return self.can_queue_tx.get()
         return None
     def can_rx_receive(self,can_msg):
-        pass
+        self.can_queue_rx.put(can_msg)
     def can_rx_transmit(self):
-        pass
+        if not self.can_queue_rx.empty():
+            return self.can_queue_rx.get()
+        return None

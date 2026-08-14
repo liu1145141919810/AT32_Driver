@@ -20,11 +20,11 @@
         "771":"MONITOR",
         "772":{
             "state":"MONITOR",
-            "substate":"_internal_temperature"
+            "substate":"internal_temperature"
         },
         "773":{
             "state":"MONITOR",
-            "substate":"_internal_vref"
+            "substate":"internal_vref"
         },
         "774":"BRIGHT",
         "775":"CALIBRATE",
@@ -32,7 +32,7 @@
         "777":"ERROR_EVENT",
         "778":"ERROR_STATE"
     },
-    "state_num":
+    "state_name":
     {
         "0":"DEFAULT",
         "1":"ORDER",
@@ -43,5 +43,17 @@
         "6":"NOADDING",
         "7":"ERROR_EVENT",
         "8":"ERROR_STATE"
+    },
+    "state_num":
+    {
+        "DEFAULT":0,
+        "ORDER":1,
+        "LIGHT":2,
+        "MONITOR":3,
+        "BRIGHT":4,
+        "CALIBRATE":5,
+        "NOADDING":6,
+        "ERROR_EVENT":7,
+        "ERROR_STATE":8
     }
 }

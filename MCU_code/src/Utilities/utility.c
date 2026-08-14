@@ -18,8 +18,8 @@ void simple_read(CommandType print_state){
     msgPrint(print_state,"internal_temperature = %.2f deg C",temp);
     msgPrint(print_state,"internal_vref = %.3f V",vref);
     if (print_state == MONITOR){
-            uint8_t low_temp=(uint8_t)((int)temp&0xFF);
-            uint8_t high_temp=(uint8_t)(((int)temp>>8)&0xFF);
+            uint8_t low_temp=(uint8_t)((int)(temp*100)&0xFF);
+            uint8_t high_temp=(uint8_t)(((int)(temp*100)>>8)&0xFF);
             uint8_t low_vref=(uint8_t)((int)(vref*1000)&0xFF);
             uint8_t high_vref=(uint8_t)((((int)(vref*1000))>>8)&0xFF);
             canSendBack(print_state,3,1,low_temp,high_temp);

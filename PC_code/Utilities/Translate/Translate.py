@@ -22,7 +22,7 @@ class Translate:
             f.write("\n")
             for name,value in self.readfile_report.items():
                 if isinstance(value,dict):
-                    macro_name="RPT_"+value["state"].upper()+value["substate"].replace(" ", "_").upper()
+                    macro_name="RPT_"+value["state"].upper()+'_'+value["substate"].replace(" ", "_").upper()
                 else:
                     macro_name="RPT_"+value.upper()
                 f.write(f"#define {macro_name} {int(name)}\n")

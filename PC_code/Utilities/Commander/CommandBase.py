@@ -5,14 +5,20 @@ import sys
 
 from .. import publicTool as tl
 
-#======== Registered file for Host===================
+#======== Registered file for Host Function===================
 COMMAND_REGISTRY={}
 def register_command(name):
     def decorator(func):
         COMMAND_REGISTRY[name] = func
         return func
     return decorator
-#======= Registered fuke for USART ==================
+#======== Registered file for Host received can translation===================
+CAN_TRANSLATION_REGISTRY={}
+def register_can_translation(name):
+    def decorator(func):
+        CAN_TRANSLATION_REGISTRY[name] = func
+        return func
+    return decorator
 #=================================#
 class CommandBase(ABC):
     def __init__(self,resManager):
