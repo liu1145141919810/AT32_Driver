@@ -16,7 +16,7 @@
 #define USER_BUTTON_PORT                 GPIOA
 
 //Calibrate
-#define CALIBRATE_MONITOR_DELAY 200
+#define CALIBRATE_MONITOR_DELAY 100
 
 //Command
 #define CMD_BUF_SIZE 32

@@ -7,7 +7,7 @@ Makefile copy
 test.c
 *.sh
 *.pyc
-PC_code/data
 Old_code/*
-PC_code/Data/*
+PC_code/Data/DataComponents/*
 PC_code/test.py
+*.ini

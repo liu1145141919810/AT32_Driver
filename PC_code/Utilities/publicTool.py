@@ -10,6 +10,10 @@ COMMUNICATION_MODE = "can" # "uart" or "can"
 #CAN
 CAN_CHANNEL="can0"
 CAN_BITRATE=500000
+
+# Data storage path (on external data disk)
+DATA_DIR = "/mnt/dl_data/prog_data/MCU"
+
 def sysPrint(msg):
     print("\033[34m" + msg + "\033[0m")
 def infoPrint(msg):

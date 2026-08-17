@@ -4,8 +4,9 @@ from Utilities.Commander import MCUcommand
 from Utilities.Communication import CommunicationManager as communi
 from Utilities.Translate import Translate
 from Utilities import publicTool as tl
+from Data.dataLoader import DataLoader
 import threading
-import time
+
 def argAnalyzer():
     import argparse
     parser = argparse.ArgumentParser(description="Host script for serial communication")
@@ -14,31 +15,6 @@ def argAnalyzer():
     parser.add_argument("--comMethod", default="uart", help="Communication method (default: uart)")
     args = parser.parse_args()
     return args
-#Below is the data drawing function
-def picture_one(data,name):
-    import matplotlib.pyplot as plt
-    fig,ax=plt.subplots(figsize=(10,5))
-    ax.plot(data)
-    ax.set_title(name)
-    ax.legend()
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Value")
-
-    plt.show()
-
-def drawData(resManager,threads):
-    while True:
-        #==     Getting Finished Telling ======
-        if not any(thread.is_alive() for thread in threads):
-            break
-        plot_data = resManager.plot_get()
-        if plot_data is not None:
-            temperature_data, vref_data = plot_data
-            t=time.time()
-            t_str=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(t))
-            picture_one(temperature_data, "Temperature "+t_str)
-            picture_one(vref_data, "VREF "+t_str)
-
 if __name__ == "__main__":
     #Translate
     Translator=Translate.Translate()
@@ -66,7 +42,10 @@ if __name__ == "__main__":
         thread3=threading.Thread(target=mcuManager.run, args=())
         threads.append(thread3)
         thread3.start()
-    drawData(resManager,threads)
+    #Storing the relevant data
+    data_loader = DataLoader(resManager, threads)
+    data_loader.DataLoop()
+
     thread1.join()
     thread2.join()
     if tl.COMMUNICATION_MODE == "can":

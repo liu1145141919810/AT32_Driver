@@ -35,7 +35,7 @@
         "args":[]
     },
     {
-        "delay":6000,
+        "delay":60000,
         "Cmd":"OFF",
         "args":[]
     },
