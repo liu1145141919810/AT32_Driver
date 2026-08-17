@@ -1,7 +1,11 @@
+import os
 import torch
 import configparser
+
+# Use absolute path based on this file's location
+_CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))
 config = configparser.ConfigParser()
-config.read('param.ini')
+config.read(os.path.join(_CONFIG_DIR, 'param.ini'))
 class KalmanFilter:
     def __init__(self,F,H,B,Q,R):
         self.F=F;self.H=H;self.B=B;self.Q=Q;self.R=R
@@ -43,13 +47,28 @@ class Runner:
             Q=torch.tensor(eval(config.get('Q','Q'))).to(self.device)
         if R is None:
             R=torch.tensor(eval(config.get('R','R'))).to(self.device)
-    def run(self,x_true,z_seq,P0=None,u_seq=None):
+        self.F=torch.tensor(F,dtype=torch.float32)
+        self.H=torch.tensor(H,dtype=torch.float32)
+        self.B=torch.tensor(B,dtype=torch.float32)
+        self.Q=torch.tensor(Q,dtype=torch.float32)
+        self.R=torch.tensor(R,dtype=torch.float32)
+
+    def run(self,x0,z_seq,P0=None,u_seq=None):
+        x0=torch.tensor(x0,device=self.device,dtype=torch.float32)
+        z_seq=torch.tensor(z_seq,device=self.device,dtype=torch.float32)
+        x0=x0.reshape(1,-1)
+        z_seq=z_seq.reshape(z_seq.shape[0],-1)
+
         kf=KalmanFilter(self.F,self.H,self.B,self.Q,self.R)
         if P0 is None:
             P0=torch.eye(self.F.shape[0],device=self.F.device)
+        P0=torch.tensor(P0,device=self.F.device,dtype=torch.float32)
         if u_seq is None:
             u_seq=torch.zeros((z_seq.shape[0],self.B.shape[1]),device=self.F.device)
-        x_est=kf.run_sequence(x_true,P0,z_seq,u_seq)
+        u_seq=torch.tensor(u_seq,device=self.F.device,dtype=torch.float32)
+        x_est=kf.run_sequence(x0,P0,z_seq,u_seq)
+        if self.device.type=="cuda":
+            x_est=x_est.cpu()
         return x_est
 if __name__=="__main__":
     runner = Runner()

@@ -4,7 +4,7 @@ from Utilities.Commander import MCUcommand
 from Utilities.Communication import CommunicationManager as communi
 from Utilities.Translate import Translate
 from Utilities import publicTool as tl
-from Data.dataLoader import DataLoader
+from PC_code.Data.dataDealer import DataLoader
 import threading
 
 def argAnalyzer():
